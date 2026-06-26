@@ -49,7 +49,7 @@ export default function RegisterPage() {
       });
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
-      navigate("/courses");
+      navigate("/onboarding");
     } catch (err) {
       setError(
         err.response?.data?.detail ||
@@ -137,7 +137,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{" "}
-            <Link to="/" className="text-navy font-semibold hover:text-gold transition-colors">
+            <Link to="/login" className="text-navy font-semibold hover:text-gold transition-colors">
               Sign in / Войти
             </Link>
           </p>

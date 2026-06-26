@@ -27,6 +27,7 @@ export default {
         "slide-up": "slideUp 0.4s ease-out",
         "pop": "pop 0.25s ease-out",
         "typing": "typing 1.2s infinite",
+        "float": "float 3s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -44,6 +45,10 @@ export default {
         typing: {
           "0%, 60%, 100%": { opacity: 0.3 },
           "30%": { opacity: 1 },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
         },
       },
     },
