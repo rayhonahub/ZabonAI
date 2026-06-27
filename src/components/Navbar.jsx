@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { LANGUAGES, getLang, setLang } from "../utils/lang";
+import Logo from "./Logo";
 
 const links = [
   { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚" },
@@ -55,8 +56,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 bg-navy/95 backdrop-blur text-white shadow-soft">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/courses" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
+          <Logo size="small" />
           <span className="bg-gradient-to-r from-gold-light to-gold bg-clip-text text-transparent">ZaboniAI</span>
-          <span>🇹🇯</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -151,7 +152,9 @@ export default function Navbar() {
           } flex flex-col`}
         >
           <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-            <span className="font-extrabold text-white">ZaboniAI 🇹🇯</span>
+            <span className="flex items-center gap-2 font-extrabold text-white">
+              <Logo size="small" /> ZaboniAI
+            </span>
             <button onClick={() => setMenuOpen(false)} className="text-white/70 hover:text-white p-1">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

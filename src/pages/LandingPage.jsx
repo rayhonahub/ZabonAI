@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCountUp } from "../hooks/useCountUp";
+import Logo from "../components/Logo";
 
 const FEATURES = [
   {
@@ -130,7 +131,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <header className="flex items-center justify-between max-w-6xl mx-auto px-4 sm:px-6 py-5">
         <span className="font-extrabold text-xl text-navy flex items-center gap-2">
-          ZaboniAI <span>🇹🇯</span>
+          <Logo size="small" /> ZaboniAI <span>🇹🇯</span>
         </span>
         <Link
           to="/login"
@@ -142,6 +143,9 @@ export default function LandingPage() {
 
       <section className="bg-gradient-to-br from-navy via-navy-dark to-[#0c1b2e] bg-grain">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
+          <div className="flex justify-center mb-6">
+            <Logo size="large" className="animate-float" />
+          </div>
           <div className="flex justify-center gap-5 text-4xl mb-8">
             <span className="animate-float inline-block" style={{ animationDelay: "0s" }}>
               📖

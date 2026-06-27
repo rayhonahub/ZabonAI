@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import Logo from "../components/Logo";
 
 function UserIcon() {
   return (
@@ -64,6 +65,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy via-navy-dark to-[#0c1b2e] px-4 bg-grain">
       <div className="w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-3">
+            <Logo size="medium" />
+          </div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight">
             ZaboniAI <span className="ml-1">🇹🇯</span>
           </h1>
