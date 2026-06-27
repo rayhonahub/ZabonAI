@@ -117,9 +117,11 @@ class QuizResult(BaseModel):
 
 class ProgressResponse(BaseModel):
     lesson_id: int
+    lesson_title: Optional[str] = None
     completed: bool
     score: Optional[float]
     weak_topic: bool
+    completed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

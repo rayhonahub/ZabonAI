@@ -11,9 +11,21 @@ def get_my_progress(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return db.query(models.UserProgress).filter(
+    rows = db.query(models.UserProgress).filter(
         models.UserProgress.user_id == current_user.id
-    ).all()
+    ).order_by(models.UserProgress.completed_at.desc()).all()
+
+    return [
+        schemas.ProgressResponse(
+            lesson_id=p.lesson_id,
+            lesson_title=p.lesson.title if p.lesson else None,
+            completed=p.completed,
+            score=p.score,
+            weak_topic=p.weak_topic,
+            completed_at=p.completed_at,
+        )
+        for p in rows
+    ]
 
 
 @router.get("/summary", response_model=schemas.ProgressSummary)
