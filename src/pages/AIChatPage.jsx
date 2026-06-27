@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Skeleton from "../components/Skeleton";
 import api from "../api/axios";
 import { getLang } from "../utils/lang";
 
@@ -299,7 +300,19 @@ export default function AIChatPage() {
           ref={scrollRef}
           className="flex-1 bg-white rounded-2xl shadow-card p-4 sm:p-6 mb-4 overflow-y-auto max-h-[55vh] min-h-[320px] flex flex-col gap-4"
         >
-          {historyLoading && <p className="text-sm text-slate-400 text-center py-10">Loading history...</p>}
+          {historyLoading && (
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-48 rounded-2xl" />
+              </div>
+              <div className="flex justify-start">
+                <Skeleton className="h-16 w-64 rounded-2xl" />
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-40 rounded-2xl" />
+              </div>
+            </div>
+          )}
 
           {!historyLoading && messages.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 py-10">

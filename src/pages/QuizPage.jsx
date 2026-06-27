@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
+import { showToast } from "../utils/toastBus";
 
 const optionKeys = ["a", "b", "c", "d"];
 
@@ -52,6 +53,22 @@ export default function QuizPage() {
     }
   }, [mode, result]);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (mode !== "quiz" || !activeSet || selected) return;
+      const digitMap = { "1": "a", "2": "b", "3": "c", "4": "d" };
+      const key = digitMap[e.key] || (["a", "b", "c", "d"].includes(e.key.toLowerCase()) ? e.key.toLowerCase() : null);
+      if (!key) return;
+      const q = activeSet[index];
+      if (q && q[`option_${key}`]) {
+        selectOption(q.id, key);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, activeSet, index, selected]);
+
   function selectOption(questionId, key) {
     if (selected) return;
     setSelected(key);
@@ -78,6 +95,7 @@ export default function QuizPage() {
       });
       setResult(res.data);
       setMode("result");
+      showToast("ℹ️ Quiz saved / Тест сохранён", "info");
     } catch (err) {
       setError(err.response?.data?.detail || "Could not submit quiz / Не удалось отправить тест");
     } finally {

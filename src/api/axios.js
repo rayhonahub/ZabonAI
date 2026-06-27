@@ -1,4 +1,5 @@
 import axios from "axios";
+import { showToast } from "../utils/toastBus";
 
 const api = axios.create({
   baseURL: "http://localhost:8000",
@@ -20,6 +21,8 @@ api.interceptors.response.use(
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
+    } else if (!error.response || error.response.status >= 500) {
+      showToast("❌ Something went wrong / Что-то пошло не так", "error");
     }
     return Promise.reject(error);
   }

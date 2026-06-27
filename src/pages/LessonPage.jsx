@@ -8,6 +8,7 @@ import api from "../api/axios";
 import { extractVocab } from "../utils/extractVocab";
 import { parseSections, emojiForLesson } from "../utils/lessonSections";
 import { generatePracticeExercises } from "../utils/practiceExercises";
+import { showToast } from "../utils/toastBus";
 
 function readingTimeMinutes(content) {
   if (!content) return 1;
@@ -90,11 +91,38 @@ export default function LessonPage() {
     setUnderstood(false);
   }, [readingIndex]);
 
+  function goToNextReadingStep() {
+    if (readingIndex + 1 < totalReadingSteps) {
+      setReadingIndex((i) => i + 1);
+    } else {
+      setStep(exercises.length > 0 ? "practice" : "complete");
+    }
+  }
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (step !== "reading") return;
+      if (e.key === "ArrowRight" && (onVocabStep || understood)) {
+        goToNextReadingStep();
+      } else if (e.key === "ArrowLeft" && readingIndex > 0) {
+        setReadingIndex((i) => i - 1);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, readingIndex, understood, onVocabStep, totalReadingSteps, exercises.length]);
+
   useEffect(() => {
     if (step === "complete" && lesson) {
       api
         .post(`/progress/complete-lesson/${lesson.id}`)
-        .then((res) => setCompletion(res.data))
+        .then((res) => {
+          setCompletion(res.data);
+          if (res.data.xp_awarded) {
+            showToast("✅ Lesson completed! +10 XP", "success");
+          }
+        })
         .catch(() => setCompletion({ xp_awarded: false }));
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
@@ -246,13 +274,7 @@ export default function LessonPage() {
             )}
 
             <button
-              onClick={() => {
-                if (readingIndex + 1 < totalReadingSteps) {
-                  setReadingIndex((i) => i + 1);
-                } else {
-                  setStep(exercises.length > 0 ? "practice" : "complete");
-                }
-              }}
+              onClick={goToNextReadingStep}
               disabled={!onVocabStep && !understood}
               className="mt-6 w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
             >
