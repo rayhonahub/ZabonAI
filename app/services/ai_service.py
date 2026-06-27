@@ -1,4 +1,5 @@
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 from dotenv import load_dotenv
 import os
 import json
@@ -6,7 +7,7 @@ import json
 load_dotenv()
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = genai.GenerativeModel("gemini-2.0-flash-lite")
 
 LANGUAGE_NAMES = {
     "ru": "Russian",
@@ -18,6 +19,21 @@ LANGUAGE_NAMES = {
 def _lang_instruction(lang: str) -> str:
     name = LANGUAGE_NAMES.get(lang, "Russian")
     return f"Explain in {name}."
+
+
+class QuotaExceeded(Exception):
+    pass
+
+
+def safe_generate(prompt, image=None) -> str:
+    try:
+        if image is not None:
+            return model.generate_content([prompt, image]).text
+        return model.generate_content(prompt).text
+    except ResourceExhausted:
+        return "⚠️ AI временно недоступен. Лимит запросов исчерпан. Попробуйте через час."
+    except Exception as e:
+        return f"⚠️ Ошибка AI: {str(e)}"
 
 
 def check_grammar(text: str, lang: str = "ru") -> str:
@@ -34,8 +50,7 @@ Format:
 ❌ Mistake: [what was wrong]
 💡 Explanation: [short explanation]
 """
-    response = model.generate_content(prompt)
-    return response.text
+    return safe_generate(prompt)
 
 
 def ask_tutor(question: str, lesson_context: str = None, lang: str = "ru") -> str:
@@ -49,8 +64,7 @@ Student's question: {question}
 Answer clearly and simply. Use examples.
 {_lang_instruction(lang)}
 """
-    response = model.generate_content(prompt)
-    return response.text
+    return safe_generate(prompt)
 
 
 def analyze_screenshot(image_bytes: bytes, question: str = None, lang: str = "ru") -> str:
@@ -70,8 +84,7 @@ Look at the image and:
 3. Give helpful tips related to English learning
 Use simple language. {_lang_instruction(lang)}
 """
-    response = model.generate_content([prompt, image])
-    return response.text
+    return safe_generate(prompt, image)
 
 
 def generate_quiz(lesson_content: str, lesson_title: str) -> list:
@@ -95,7 +108,10 @@ Return ONLY valid JSON array, no extra text:
   }}
 ]
 """
-    response = model.generate_content(prompt)
+    try:
+        response = model.generate_content(prompt)
+    except ResourceExhausted as e:
+        raise QuotaExceeded("Gemini quota exhausted, try again later") from e
     text = response.text.strip()
 
     if "```json" in text:
@@ -121,5 +137,4 @@ Give them:
 
 Keep it friendly and motivating. Respond in Russian.
 """
-    response = model.generate_content(prompt)
-    return response.text
+    return safe_generate(prompt)

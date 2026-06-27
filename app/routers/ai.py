@@ -1,11 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import datetime, timedelta
 from app import models, schemas
 from app.deps import get_db, get_current_user
 from app.services import ai_service
 
 router = APIRouter(prefix="/ai", tags=["AI"])
+
+CACHE_WINDOW = timedelta(hours=24)
+
+
+def get_cached_response(db: Session, user_id: int, message: str, chat_type: str, lesson_id: int = None):
+    cutoff = datetime.utcnow() - CACHE_WINDOW
+    query = db.query(models.AIChatHistory).filter(
+        models.AIChatHistory.user_id == user_id,
+        models.AIChatHistory.message == message,
+        models.AIChatHistory.chat_type == chat_type,
+        models.AIChatHistory.created_at >= cutoff,
+        ~models.AIChatHistory.response.startswith("⚠️"),
+    )
+    if chat_type == "tutor":
+        query = query.filter(models.AIChatHistory.lesson_id == lesson_id)
+    entry = query.order_by(models.AIChatHistory.created_at.desc()).first()
+    return entry.response if entry else None
 
 
 @router.post("/grammar-check", response_model=schemas.AIResponse)
@@ -14,7 +32,9 @@ def grammar_check(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    response = ai_service.check_grammar(data.text, data.lang)
+    response = get_cached_response(db, current_user.id, data.text, "grammar")
+    if response is None:
+        response = ai_service.check_grammar(data.text, data.lang)
     history = models.AIChatHistory(
         user_id=current_user.id,
         message=data.text,
@@ -38,7 +58,9 @@ def ask_tutor(
         if lesson:
             lesson_context = f"Title: {lesson.title}\nContent: {lesson.content}"
 
-    response = ai_service.ask_tutor(data.question, lesson_context, data.lang)
+    response = get_cached_response(db, current_user.id, data.question, "tutor", data.lesson_id)
+    if response is None:
+        response = ai_service.ask_tutor(data.question, lesson_context, data.lang)
     history = models.AIChatHistory(
         user_id=current_user.id,
         lesson_id=data.lesson_id,
@@ -88,7 +110,13 @@ def generate_quiz(
     if not lesson.content:
         raise HTTPException(status_code=400, detail="У урока нет контента")
 
-    questions = ai_service.generate_quiz(lesson.content, lesson.title)
+    try:
+        questions = ai_service.generate_quiz(lesson.content, lesson.title)
+    except ai_service.QuotaExceeded:
+        raise HTTPException(
+            status_code=503,
+            detail="AI временно недоступен. Лимит запросов исчерпан. Попробуйте через час."
+        )
     for q in questions:
         question = models.QuizQuestion(
             lesson_id=lesson_id,
