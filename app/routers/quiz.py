@@ -30,11 +30,27 @@ def submit_quiz(
     if not questions:
         raise HTTPException(status_code=404, detail="Вопросы не найдены")
 
+    def option_text(q, letter):
+        if not letter:
+            return None
+        return getattr(q, f"option_{letter.lower()}", None)
+
     correct = 0
+    results = []
     for q in questions:
         user_answer = data.answers.get(str(q.id))
-        if user_answer and user_answer.lower() == q.correct_answer.lower():
+        is_correct = bool(user_answer and user_answer.lower() == q.correct_answer.lower())
+        if is_correct:
             correct += 1
+        results.append(schemas.QuizResultItem(
+            question_id=q.id,
+            question=q.question,
+            user_answer=user_answer,
+            correct_answer=q.correct_answer,
+            is_correct=is_correct,
+            correct_option_text=option_text(q, q.correct_answer) or "",
+            user_option_text=option_text(q, user_answer),
+        ))
 
     total = len(questions)
     score = round((correct / total) * 100, 1)
@@ -75,7 +91,7 @@ def submit_quiz(
         current_user.level = level_from_xp(current_user.xp_points)
 
     db.commit()
-    return schemas.QuizResult(score=score, total=total, correct=correct, weak_topic=weak_topic)
+    return schemas.QuizResult(score=score, total=total, correct=correct, weak_topic=weak_topic, results=results)
 
 
 @router.post("/questions/{lesson_id}", response_model=schemas.QuizQuestionResponse)

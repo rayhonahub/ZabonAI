@@ -97,11 +97,21 @@ class QuizSubmit(BaseModel):
     lesson_id: int
     answers: dict
 
+class QuizResultItem(BaseModel):
+    question_id: int
+    question: str
+    user_answer: Optional[str] = None
+    correct_answer: str
+    is_correct: bool
+    correct_option_text: str
+    user_option_text: Optional[str] = None
+
 class QuizResult(BaseModel):
     score: float
     total: int
     correct: int
     weak_topic: bool
+    results: List[QuizResultItem]
 
 
 
