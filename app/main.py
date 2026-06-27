@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-from app.routers import auth, courses, quiz, progress, ai
+from app.database import engine, Base, run_migrations
+from app.routers import auth, courses, quiz, progress, ai, profile
 
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 app = FastAPI(
     title="ZaboniAI",
@@ -27,6 +28,7 @@ app.include_router(courses.router)
 app.include_router(quiz.router)
 app.include_router(progress.router)
 app.include_router(ai.router)
+app.include_router(profile.router)
 
 
 @app.get("/")

@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
+import random
 from app.database import Base
 
 
@@ -86,6 +87,9 @@ class AIChatHistory(Base):
     user = relationship("User", back_populates="chat_history")
 
 
+AVATAR_COLORS = ["#f0a500", "#1e3a5f", "#10b981", "#3b82f6", "#a855f7", "#ec4899", "#f43f5e", "#f97316", "#14b8a6", "#6366f1"]
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -96,6 +100,14 @@ class User(Base):
     streak = Column(Integer, default=0)
     last_activity = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    avatar_color = Column(String, default=lambda: random.choice(AVATAR_COLORS))
+    bio = Column(Text, nullable=True)
+    selected_language = Column(String, default="ru")
+    xp_points = Column(Integer, default=0)
+    level = Column(String, default="beginner")
+    total_lessons_completed = Column(Integer, default=0)
+    total_quizzes_passed = Column(Integer, default=0)
 
     progress = relationship("UserProgress", back_populates="user")
     chat_history = relationship("AIChatHistory", back_populates="user")

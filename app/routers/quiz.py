@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.deps import get_db, get_current_user
+from app.level_utils import level_from_xp
 from datetime import datetime
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
@@ -44,6 +45,10 @@ def submit_quiz(
         models.UserProgress.lesson_id == data.lesson_id
     ).first()
 
+    is_first_completion = progress is None
+    was_already_passed = bool(progress and progress.score is not None and progress.score >= 60)
+    newly_passed = score >= 60 and not was_already_passed
+
     if progress:
         progress.score = score
         progress.weak_topic = weak_topic
@@ -59,6 +64,15 @@ def submit_quiz(
             completed_at=datetime.utcnow()
         )
         db.add(progress)
+
+    if is_first_completion:
+        current_user.xp_points += 10
+        current_user.total_lessons_completed += 1
+    if newly_passed:
+        current_user.xp_points += 20
+        current_user.total_quizzes_passed += 1
+    if is_first_completion or newly_passed:
+        current_user.level = level_from_xp(current_user.xp_points)
 
     db.commit()
     return schemas.QuizResult(score=score, total=total, correct=correct, weak_topic=weak_topic)

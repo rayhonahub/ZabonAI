@@ -128,6 +128,38 @@ class ProgressSummary(BaseModel):
 
 
 
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_color: Optional[str] = None
+    selected_language: Optional[str] = None
+
+class ProfileResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    bio: Optional[str] = None
+    avatar_color: str
+    selected_language: str
+    streak: int
+    xp_points: int
+    level: str
+    level_label: str
+    total_lessons_completed: int
+    total_quizzes_passed: int
+    created_at: datetime
+
+class ProfileStats(BaseModel):
+    xp_points: int
+    level: str
+    level_label: str
+    streak: int
+    total_lessons_completed: int
+    total_quizzes_passed: int
+    average_score: float
+
+
+
 class GrammarCheckRequest(BaseModel):
     text: str
 
