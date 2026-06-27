@@ -3,11 +3,52 @@ import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 
-const tabs = [
-  { key: "grammar", label: "Grammar Check", sub: "Проверка грамматики" },
-  { key: "ask", label: "Ask Tutor", sub: "Спросить репетитора" },
-  { key: "screenshot", label: "Screenshot", sub: "Скриншот" },
-];
+const TAB_CONFIG = {
+  grammar: {
+    label: "Grammar Check",
+    sub: "Проверка грамматики",
+    storageKey: "grammar_chat",
+    backendType: "grammar",
+    placeholder: "Type a sentence to check / Введите предложение...",
+    tabActive: "bg-emerald-600 text-white shadow-sm",
+    userBubble: "bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
+    aiBubble: "bg-emerald-50 border-emerald-200 text-slate-700",
+    badge: "bg-emerald-100 text-emerald-700",
+    sendBtn: "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-500/30 hover:shadow-emerald-500/50",
+    focusRing: "focus:border-emerald-500 focus:ring-emerald-500/10",
+    dot: "bg-emerald-600/40",
+  },
+  tutor: {
+    label: "Ask Tutor",
+    sub: "Спросить репетитора",
+    storageKey: "tutor_chat",
+    backendType: "tutor",
+    placeholder: "Ask your tutor a question / Задайте вопрос...",
+    tabActive: "bg-blue-600 text-white shadow-sm",
+    userBubble: "bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
+    aiBubble: "bg-blue-50 border-blue-200 text-slate-700",
+    badge: "bg-blue-100 text-blue-700",
+    sendBtn: "bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30 hover:shadow-blue-500/50",
+    focusRing: "focus:border-blue-500 focus:ring-blue-500/10",
+    dot: "bg-blue-600/40",
+  },
+  screenshot: {
+    label: "Screenshot",
+    sub: "Скриншот",
+    storageKey: "screenshot_chat",
+    backendType: "screenshot",
+    placeholder: "Add a question about the image (optional) / Вопрос к изображению...",
+    tabActive: "bg-purple-600 text-white shadow-sm",
+    userBubble: "bg-purple-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
+    aiBubble: "bg-purple-50 border-purple-200 text-slate-700",
+    badge: "bg-purple-100 text-purple-700",
+    sendBtn: "bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30 hover:shadow-purple-500/50",
+    focusRing: "focus:border-purple-500 focus:ring-purple-500/10",
+    dot: "bg-purple-600/40",
+  },
+};
+
+const TAB_ORDER = ["grammar", "tutor", "screenshot"];
 
 function UploadIcon() {
   return (
@@ -26,144 +67,180 @@ function SendIcon() {
   );
 }
 
-function TypingDots() {
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TypingDots({ dotClass }) {
   return (
     <div className="flex gap-1.5 px-1">
-      <span className="w-2 h-2 rounded-full bg-navy/40 animate-typing" style={{ animationDelay: "0s" }} />
-      <span className="w-2 h-2 rounded-full bg-navy/40 animate-typing" style={{ animationDelay: "0.2s" }} />
-      <span className="w-2 h-2 rounded-full bg-navy/40 animate-typing" style={{ animationDelay: "0.4s" }} />
+      <span className={`w-2 h-2 rounded-full ${dotClass} animate-typing`} style={{ animationDelay: "0s" }} />
+      <span className={`w-2 h-2 rounded-full ${dotClass} animate-typing`} style={{ animationDelay: "0.2s" }} />
+      <span className={`w-2 h-2 rounded-full ${dotClass} animate-typing`} style={{ animationDelay: "0.4s" }} />
     </div>
   );
 }
 
-function chatTypeLabel(type) {
-  if (type === "grammar") return "Grammar Check";
-  if (type === "screenshot") return "Screenshot";
-  return "Ask Tutor";
+function loadFromStorage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function AIChatPage() {
   const [searchParams] = useSearchParams();
   const defaultLessonId = searchParams.get("lesson_id") || "";
 
-  const [activeTab, setActiveTab] = useState("ask");
-  const [messages, setMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState("tutor");
   const [historyLoading, setHistoryLoading] = useState(true);
-  const [text, setText] = useState("");
-  const [lessonId, setLessonId] = useState(defaultLessonId);
-  const [file, setFile] = useState(null);
+
+  const [grammarMessages, setGrammarMessages] = useState(() => loadFromStorage(TAB_CONFIG.grammar.storageKey));
+  const [tutorMessages, setTutorMessages] = useState(() => loadFromStorage(TAB_CONFIG.tutor.storageKey));
+  const [screenshotMessages, setScreenshotMessages] = useState(() => loadFromStorage(TAB_CONFIG.screenshot.storageKey));
+
+  const [grammarText, setGrammarText] = useState("");
+  const [tutorText, setTutorText] = useState("");
+  const [tutorLessonId, setTutorLessonId] = useState(defaultLessonId);
+  const [screenshotText, setScreenshotText] = useState("");
+  const [screenshotFile, setScreenshotFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const [sending, setSending] = useState(false);
+
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const stateByTab = {
+    grammar: [grammarMessages, setGrammarMessages],
+    tutor: [tutorMessages, setTutorMessages],
+    screenshot: [screenshotMessages, setScreenshotMessages],
+  };
+  const [messages, setMessages] = stateByTab[activeTab];
+  const cfg = TAB_CONFIG[activeTab];
+  const sending = messages.some((m) => m.pending);
+
+  // Seed all three tabs from backend history once, but only if localStorage was empty for that tab
   useEffect(() => {
     api
       .get("/ai/history")
       .then((res) => {
         const sorted = [...res.data].reverse();
-        setMessages(
-          sorted.map((h) => ({
+        const byType = { grammar: [], tutor: [], screenshot: [] };
+        sorted.forEach((h) => {
+          const key = byType[h.chat_type] ? h.chat_type : "tutor";
+          byType[key].push({
             id: h.id,
-            chat_type: h.chat_type,
             message: h.message,
             response: h.response,
             pending: false,
-          }))
-        );
+          });
+        });
+        if (grammarMessages.length === 0 && byType.grammar.length) setGrammarMessages(byType.grammar);
+        if (tutorMessages.length === 0 && byType.tutor.length) setTutorMessages(byType.tutor);
+        if (screenshotMessages.length === 0 && byType.screenshot.length) setScreenshotMessages(byType.screenshot);
       })
       .finally(() => setHistoryLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, sending]);
+    localStorage.setItem(TAB_CONFIG.grammar.storageKey, JSON.stringify(grammarMessages));
+  }, [grammarMessages]);
+  useEffect(() => {
+    localStorage.setItem(TAB_CONFIG.tutor.storageKey, JSON.stringify(tutorMessages));
+  }, [tutorMessages]);
+  useEffect(() => {
+    localStorage.setItem(TAB_CONFIG.screenshot.storageKey, JSON.stringify(screenshotMessages));
+  }, [screenshotMessages]);
 
-  function addMessage(msg) {
-    setMessages((prev) => [...prev, msg]);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, activeTab]);
+
+  function addMessage(setFn, msg) {
+    setFn((prev) => [...prev, msg]);
   }
 
-  function updateLastMessage(id, patch) {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  function updateMessage(setFn, id, patch) {
+    setFn((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  }
+
+  function clearChat() {
+    setMessages([]);
   }
 
   async function handleSend() {
     if (sending) return;
     const tempId = `temp-${Date.now()}`;
+    const setFn = stateByTab[activeTab][1];
 
     if (activeTab === "grammar") {
-      if (!text.trim()) return;
-      addMessage({ id: tempId, chat_type: "grammar", message: text, response: null, pending: true });
-      const payload = text;
-      setText("");
-      setSending(true);
+      if (!grammarText.trim()) return;
+      addMessage(setFn, { id: tempId, message: grammarText, response: null, pending: true });
+      const payload = grammarText;
+      setGrammarText("");
       try {
         const res = await api.post("/ai/grammar-check", { text: payload });
-        updateLastMessage(tempId, { response: res.data.response, pending: false });
+        updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
-        updateLastMessage(tempId, {
+        updateMessage(setFn, tempId, {
           response: err.response?.data?.detail || "Error / Ошибка",
           pending: false,
           isError: true,
         });
-      } finally {
-        setSending(false);
       }
     }
 
-    if (activeTab === "ask") {
-      if (!text.trim()) return;
-      addMessage({ id: tempId, chat_type: "ask", message: text, response: null, pending: true });
-      const payload = text;
-      setText("");
-      setSending(true);
+    if (activeTab === "tutor") {
+      if (!tutorText.trim()) return;
+      addMessage(setFn, { id: tempId, message: tutorText, response: null, pending: true });
+      const payload = tutorText;
+      setTutorText("");
       try {
         const res = await api.post("/ai/ask", {
           question: payload,
-          lesson_id: lessonId ? Number(lessonId) : null,
+          lesson_id: tutorLessonId ? Number(tutorLessonId) : null,
         });
-        updateLastMessage(tempId, { response: res.data.response, pending: false });
+        updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
-        updateLastMessage(tempId, {
+        updateMessage(setFn, tempId, {
           response: err.response?.data?.detail || "Error / Ошибка",
           pending: false,
           isError: true,
         });
-      } finally {
-        setSending(false);
       }
     }
 
     if (activeTab === "screenshot") {
-      if (!file) return;
-      addMessage({
+      if (!screenshotFile) return;
+      addMessage(setFn, {
         id: tempId,
-        chat_type: "screenshot",
-        message: text || "📷 Screenshot uploaded",
-        previewUrl: URL.createObjectURL(file),
+        message: screenshotText || "📷 Screenshot uploaded",
+        previewUrl: URL.createObjectURL(screenshotFile),
         response: null,
         pending: true,
       });
       const form = new FormData();
-      form.append("file", file);
-      if (text.trim()) form.append("question", text);
-      const fileToSend = file;
-      setText("");
-      setFile(null);
-      setSending(true);
+      form.append("file", screenshotFile);
+      if (screenshotText.trim()) form.append("question", screenshotText);
+      setScreenshotText("");
+      setScreenshotFile(null);
       try {
         const res = await api.post("/ai/screenshot", form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        updateLastMessage(tempId, { response: res.data.response, pending: false });
+        updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
-        updateLastMessage(tempId, {
+        updateMessage(setFn, tempId, {
           response: err.response?.data?.detail || "Error / Ошибка",
           pending: false,
           isError: true,
         });
-      } finally {
-        setSending(false);
       }
     }
   }
@@ -173,9 +250,14 @@ export default function AIChatPage() {
     setDragOver(false);
     const dropped = e.dataTransfer.files?.[0];
     if (dropped && dropped.type.startsWith("image/")) {
-      setFile(dropped);
+      setScreenshotFile(dropped);
     }
   }
+
+  const currentText = activeTab === "grammar" ? grammarText : activeTab === "tutor" ? tutorText : screenshotText;
+  const setCurrentText =
+    activeTab === "grammar" ? setGrammarText : activeTab === "tutor" ? setTutorText : setScreenshotText;
+  const canSend = activeTab === "screenshot" ? !!screenshotFile : !!currentText.trim();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -185,20 +267,29 @@ export default function AIChatPage() {
         <h1 className="text-2xl font-extrabold text-navy mb-1">AI Tutor</h1>
         <p className="text-slate-500 mb-6">AI Репетитор</p>
 
-        <div className="flex gap-1 bg-white rounded-xl shadow-card p-1.5 mb-5 w-full sm:w-fit">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                activeTab === t.key
-                  ? "bg-navy text-white shadow-sm"
-                  : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-2 mb-5 flex-wrap">
+          <div className="flex gap-1 bg-white rounded-xl shadow-card p-1.5 w-full sm:w-fit">
+            {TAB_ORDER.map((key) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  activeTab === key ? TAB_CONFIG[key].tabActive : "text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {TAB_CONFIG[key].label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={clearChat}
+            disabled={messages.length === 0}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-red-500 disabled:opacity-40 disabled:hover:text-slate-400 transition-colors duration-150 px-2"
+          >
+            <TrashIcon />
+            Clear chat / Очистить
+          </button>
         </div>
 
         <div
@@ -210,21 +301,20 @@ export default function AIChatPage() {
           {!historyLoading && messages.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 py-10">
               <p className="text-3xl mb-2">💬</p>
-              <p className="text-sm">
-                Start the conversation / Начни разговор
-              </p>
+              <p className="text-sm">Start the conversation / Начни разговор</p>
+              <p className="text-xs text-slate-300 mt-1">{cfg.sub}</p>
             </div>
           )}
 
           {messages.map((m) => (
             <div key={m.id} className="flex flex-col gap-2 animate-fade-in">
               <div className="flex justify-end">
-                <div className="max-w-[80%] bg-navy text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
-                  <p className="text-[11px] text-white/50 font-semibold mb-0.5">
-                    {chatTypeLabel(m.chat_type)}
-                  </p>
+                <div className={`max-w-[80%] ${cfg.userBubble}`}>
+                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 ${cfg.badge}`}>
+                    {cfg.label}
+                  </span>
                   {m.previewUrl && (
-                    <img src={m.previewUrl} alt="upload" className="rounded-lg mb-2 max-h-40 object-cover" />
+                    <img src={m.previewUrl} alt="upload" className="block rounded-lg mb-2 max-h-40 object-cover" />
                   )}
                   <p>{m.message}</p>
                 </div>
@@ -233,12 +323,10 @@ export default function AIChatPage() {
               <div className="flex justify-start">
                 <div
                   className={`max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm shadow-sm border ${
-                    m.isError
-                      ? "bg-red-50 border-red-100 text-red-600"
-                      : "bg-slate-50 border-gold/20 text-slate-700"
+                    m.isError ? "bg-red-50 border-red-100 text-red-600" : cfg.aiBubble
                   }`}
                 >
-                  {m.pending ? <TypingDots /> : <p className="whitespace-pre-wrap">{m.response}</p>}
+                  {m.pending ? <TypingDots dotClass={cfg.dot} /> : <p className="whitespace-pre-wrap">{m.response}</p>}
                 </div>
               </div>
             </div>
@@ -246,12 +334,12 @@ export default function AIChatPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-card p-4">
-          {activeTab === "ask" && (
+          {activeTab === "tutor" && (
             <input
-              value={lessonId}
-              onChange={(e) => setLessonId(e.target.value)}
+              value={tutorLessonId}
+              onChange={(e) => setTutorLessonId(e.target.value)}
               placeholder="Lesson ID (optional) / ID урока (необязательно)"
-              className="w-full mb-3 px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200"
+              className={`w-full mb-3 px-3 py-2 text-sm rounded-lg border border-slate-200 outline-none transition-all duration-200 ${cfg.focusRing} focus:ring-2`}
             />
           )}
 
@@ -265,7 +353,7 @@ export default function AIChatPage() {
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`mb-3 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ${
-                dragOver ? "border-gold bg-gold/5" : "border-slate-200 hover:border-navy/30"
+                dragOver ? "border-purple-400 bg-purple-50" : "border-slate-200 hover:border-purple-300"
               }`}
             >
               <input
@@ -273,13 +361,13 @@ export default function AIChatPage() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
               />
-              <span className="text-navy/60 mb-1">
+              <span className="text-purple-500 mb-1">
                 <UploadIcon />
               </span>
-              {file ? (
-                <p className="text-sm font-medium text-navy">{file.name}</p>
+              {screenshotFile ? (
+                <p className="text-sm font-medium text-purple-700">{screenshotFile.name}</p>
               ) : (
                 <p className="text-sm text-slate-400">
                   Drag & drop an image, or click to browse
@@ -293,27 +381,21 @@ export default function AIChatPage() {
           <div className="flex items-end gap-2">
             <textarea
               rows={1}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+              value={currentText}
+              onChange={(e) => setCurrentText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
-              placeholder={
-                activeTab === "grammar"
-                  ? "Type a sentence to check / Введите предложение..."
-                  : activeTab === "ask"
-                  ? "Ask your tutor a question / Задайте вопрос..."
-                  : "Add a question about the image (optional) / Вопрос к изображению..."
-              }
-              className="flex-1 resize-none px-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
+              placeholder={cfg.placeholder}
+              className={`flex-1 resize-none px-4 py-3 rounded-xl border border-slate-200 outline-none transition-all duration-200 text-sm ${cfg.focusRing} focus:ring-2`}
             />
             <button
               onClick={handleSend}
-              disabled={sending || (activeTab === "screenshot" ? !file : !text.trim())}
-              className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r from-gold-light to-gold text-navy-dark shadow-md shadow-gold/20 hover:shadow-gold/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 flex-shrink-0"
+              disabled={sending || !canSend}
+              className={`flex items-center justify-center w-12 h-12 rounded-xl text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 flex-shrink-0 ${cfg.sendBtn}`}
             >
               <SendIcon />
             </button>
