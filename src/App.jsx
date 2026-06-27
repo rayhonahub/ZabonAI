@@ -3,7 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import LevelSelectPage from "./pages/LevelSelectPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import CoursesPage from "./pages/CoursesPage";
 import LessonPage from "./pages/LessonPage";
 import QuizPage from "./pages/QuizPage";
@@ -29,7 +29,7 @@ export default function App() {
           path="/onboarding"
           element={
             <ProtectedRoute>
-              <LevelSelectPage />
+              <OnboardingPage />
             </ProtectedRoute>
           }
         />
