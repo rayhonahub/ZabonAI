@@ -9,6 +9,8 @@ import LessonPage from "./pages/LessonPage";
 import QuizPage from "./pages/QuizPage";
 import ProgressPage from "./pages/ProgressPage";
 import AIChatPage from "./pages/AIChatPage";
+import WordGamePage from "./pages/WordGamePage";
+import DailyChallengePage from "./pages/DailyChallengePage";
 
 export default function App() {
   return (
@@ -63,6 +65,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AIChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/game"
+        element={
+          <ProtectedRoute>
+            <WordGamePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/daily"
+        element={
+          <ProtectedRoute>
+            <DailyChallengePage />
           </ProtectedRoute>
         }
       />
