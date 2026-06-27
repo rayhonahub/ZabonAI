@@ -84,9 +84,11 @@ def submit_quiz(
     if is_first_completion:
         current_user.xp_points += 10
         current_user.total_lessons_completed += 1
+        current_user.coins += 10
     if newly_passed:
         current_user.xp_points += 20
         current_user.total_quizzes_passed += 1
+        current_user.coins += 20
     if is_first_completion or newly_passed:
         current_user.level = level_from_xp(current_user.xp_points)
 

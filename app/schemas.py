@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     streak: int
+    coins: int
     created_at: datetime
 
     class Config:

@@ -67,6 +67,13 @@ def complete_lesson(
     }
 
 
+@router.get("/coins")
+def get_my_coins(
+    current_user: models.User = Depends(get_current_user)
+):
+    return {"coins": current_user.coins}
+
+
 @router.get("/summary", response_model=schemas.ProgressSummary)
 def get_summary(
     db: Session = Depends(get_db),

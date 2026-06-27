@@ -108,6 +108,7 @@ class User(Base):
     level = Column(String, default="beginner")
     total_lessons_completed = Column(Integer, default=0)
     total_quizzes_passed = Column(Integer, default=0)
+    coins = Column(Integer, default=0)
 
     progress = relationship("UserProgress", back_populates="user")
     chat_history = relationship("AIChatHistory", back_populates="user")
