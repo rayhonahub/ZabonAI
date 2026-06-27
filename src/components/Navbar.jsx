@@ -7,6 +7,7 @@ import Logo from "./Logo";
 const links = [
   { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚" },
   { to: "/game", label: "Game", sub: "Игра", icon: "🎮" },
+  { to: "/practice", label: "Practice", sub: "Практика", icon: "🧩" },
   { to: "/daily", label: "Daily", sub: "Вызов дня", icon: "⚡" },
   { to: "/progress", label: "Progress", sub: "Прогресс", icon: "📊" },
   { to: "/ai", label: "AI Chat", sub: "AI Чат", icon: "🤖" },

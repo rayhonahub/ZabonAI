@@ -12,6 +12,7 @@ import AIChatPage from "./pages/AIChatPage";
 import WordGamePage from "./pages/WordGamePage";
 import DailyChallengePage from "./pages/DailyChallengePage";
 import ProfilePage from "./pages/ProfilePage";
+import PracticePage from "./pages/PracticePage";
 
 export default function App() {
   return (
@@ -91,6 +92,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/practice"
+        element={
+          <ProtectedRoute>
+            <PracticePage />
           </ProtectedRoute>
         }
       />
