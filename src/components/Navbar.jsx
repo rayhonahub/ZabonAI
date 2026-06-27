@@ -11,6 +11,7 @@ const links = [
   { to: "/daily", label: "Daily", sub: "Вызов дня", icon: "⚡" },
   { to: "/progress", label: "Progress", sub: "Прогресс", icon: "📊" },
   { to: "/ai", label: "AI Chat", sub: "AI Чат", icon: "🤖" },
+  { to: "/shop", label: "Shop", sub: "Магазин", icon: "🛒" },
 ];
 
 export default function Navbar() {
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(getLang());
+  const [coins, setCoins] = useState(Number(localStorage.getItem("coins") || 0));
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,6 +34,14 @@ export default function Navbar() {
         }
       })
       .catch(() => setUser(null));
+
+    api
+      .get("/progress/coins")
+      .then((res) => {
+        setCoins(res.data.coins);
+        localStorage.setItem("coins", String(res.data.coins));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -109,6 +119,9 @@ export default function Navbar() {
               <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
                 🔥 {user.streak}
               </span>
+              <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
+                💎 {coins}
+              </span>
               <div
                 title={user.full_name}
                 style={{ backgroundColor: user.avatar_color }}
@@ -178,6 +191,7 @@ export default function Navbar() {
               <div>
                 <p className="text-white font-semibold text-sm">{user.full_name}</p>
                 <p className="text-gold-light text-xs font-semibold">🔥 {user.streak} day streak</p>
+                <p className="text-gold-light text-xs font-semibold">💎 {coins} coins</p>
               </div>
             </Link>
           )}

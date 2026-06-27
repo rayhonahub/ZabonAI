@@ -13,6 +13,7 @@ import WordGamePage from "./pages/WordGamePage";
 import DailyChallengePage from "./pages/DailyChallengePage";
 import ProfilePage from "./pages/ProfilePage";
 import PracticePage from "./pages/PracticePage";
+import ShopPage from "./pages/ShopPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
@@ -105,6 +106,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <PracticePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shop"
+          element={
+            <ProtectedRoute>
+              <ShopPage />
             </ProtectedRoute>
           }
         />
