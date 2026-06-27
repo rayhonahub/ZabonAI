@@ -5,12 +5,14 @@ import api from "../api/axios";
 
 const levelStyles = {
   beginner: "bg-emerald-100 text-emerald-700",
+  elementary: "bg-blue-100 text-blue-700",
   intermediate: "bg-amber-100 text-amber-700",
   advanced: "bg-rose-100 text-rose-700",
 };
 
 const levelLabels = {
   beginner: "Beginner / Ибтидоӣ",
+  elementary: "Elementary / Бунёдӣ",
   intermediate: "Intermediate / Миёна",
   advanced: "Advanced / Пешрафта",
 };
