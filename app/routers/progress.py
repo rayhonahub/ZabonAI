@@ -37,11 +37,13 @@ def get_summary(
         models.Lesson.id.in_(weak_lesson_ids)
     ).all()
     weak_topics = [l.title for l in weak_lessons]
+    weak_topic_lessons = [{"lesson_id": l.id, "title": l.title} for l in weak_lessons]
 
     return schemas.ProgressSummary(
         total_lessons=all_lessons,
         completed_lessons=len(completed),
         average_score=avg_score,
         streak=current_user.streak,
-        weak_topics=weak_topics
+        weak_topics=weak_topics,
+        weak_topic_lessons=weak_topic_lessons
     )

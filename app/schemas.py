@@ -114,12 +114,17 @@ class ProgressResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class WeakTopicLesson(BaseModel):
+    lesson_id: int
+    title: str
+
 class ProgressSummary(BaseModel):
     total_lessons: int
     completed_lessons: int
     average_score: float
     streak: int
     weak_topics: List[str]
+    weak_topic_lessons: List[WeakTopicLesson]
 
 
 
