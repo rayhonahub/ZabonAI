@@ -2,19 +2,27 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { LANGUAGES, getLang, setLang } from "../utils/lang";
+import { useTranslation } from "../i18n/useTranslation";
 import Logo from "./Logo";
 
 const links = [
-  { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚" },
+  { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚", key: "courses" },
   { to: "/game", label: "Game", sub: "Игра", icon: "🎮" },
-  { to: "/practice", label: "Practice", sub: "Практика", icon: "🧩" },
+  { to: "/practice", label: "Practice", sub: "Практика", icon: "🧩", key: "practice" },
   { to: "/daily", label: "Daily", sub: "Вызов дня", icon: "⚡" },
-  { to: "/progress", label: "Progress", sub: "Прогресс", icon: "📊" },
-  { to: "/ai", label: "AI Chat", sub: "AI Чат", icon: "🤖" },
-  { to: "/shop", label: "Shop", sub: "Магазин", icon: "🛒" },
+  { to: "/progress", label: "Progress", sub: "Прогресс", icon: "📊", key: "progress" },
+  { to: "/ai", label: "AI Chat", sub: "AI Чат", icon: "🤖", key: "aiChat" },
+  { to: "/shop", label: "Shop", sub: "Магазин", icon: "🛒", key: "shop" },
+];
+
+const UI_LANGUAGES = [
+  { code: "ru", flag: "🇷🇺", label: "RU" },
+  { code: "tj", flag: "🇹🇯", label: "TJ" },
+  { code: "en", flag: "🇬🇧", label: "EN" },
 ];
 
 export default function Navbar() {
+  const { t, lang: uiLang, changeLang } = useTranslation();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -83,12 +91,28 @@ export default function Navbar() {
               }`}
             >
               <span>{l.icon}</span>
-              {l.label}
+              {l.key ? t(l.key) : l.label}
             </Link>
           ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            {UI_LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => changeLang(l.code)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all duration-150 border ${
+                  uiLang === l.code
+                    ? "border-gold bg-white/10 text-white"
+                    : "border-transparent text-white/60 hover:text-white hover:border-white/30"
+                }`}
+              >
+                <span>{l.flag}</span> {l.label}
+              </button>
+            ))}
+          </div>
+
           <div className="relative">
             <button
               onClick={() => setLangOpen((v) => !v)}
@@ -135,7 +159,7 @@ export default function Navbar() {
             onClick={handleLogout}
             className="text-sm font-medium text-white/70 hover:text-white border border-white/20 hover:border-white/40 rounded-full px-4 py-1.5 transition-all duration-200"
           >
-            Logout
+            {t("logout")}
           </button>
         </div>
 
@@ -197,12 +221,12 @@ export default function Navbar() {
           )}
 
           <div className="flex items-center gap-1.5 px-5 py-3 border-b border-white/10">
-            {LANGUAGES.map((l) => (
+            {UI_LANGUAGES.map((l) => (
               <button
                 key={l.code}
-                onClick={() => handleLangChange(l.code)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 ${
-                  l.code === currentLang ? "bg-gold text-navy-dark" : "bg-white/10 text-white/80"
+                onClick={() => changeLang(l.code)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 border ${
+                  uiLang === l.code ? "border-gold bg-white/10 text-white" : "border-transparent bg-white/10 text-white/80"
                 }`}
               >
                 {l.flag} {l.label}
@@ -222,9 +246,7 @@ export default function Navbar() {
                 }`}
               >
                 <span className="text-lg">{l.icon}</span>
-                <span>
-                  {l.label} <span className="opacity-50 text-xs">/ {l.sub}</span>
-                </span>
+                <span>{l.key ? t(l.key) : l.label}</span>
               </Link>
             ))}
           </nav>
@@ -234,7 +256,7 @@ export default function Navbar() {
               onClick={handleLogout}
               className="w-full text-left px-3 py-3 rounded-xl text-gold-light font-medium hover:bg-white/10 transition-colors duration-150"
             >
-              Logout / Выйти
+              {t("logout")}
             </button>
           </div>
         </div>

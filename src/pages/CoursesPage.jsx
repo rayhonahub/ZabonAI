@@ -2,19 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
+import { useTranslation } from "../i18n/useTranslation";
 
 const levelStyles = {
   beginner: "bg-emerald-100 text-emerald-700",
   elementary: "bg-blue-100 text-blue-700",
   intermediate: "bg-amber-100 text-amber-700",
   advanced: "bg-rose-100 text-rose-700",
-};
-
-const levelLabels = {
-  beginner: "Beginner / Ибтидоӣ",
-  elementary: "Elementary / Бунёдӣ",
-  intermediate: "Intermediate / Миёна",
-  advanced: "Advanced / Пешрафта",
 };
 
 function ChevronIcon({ open }) {
@@ -91,6 +85,7 @@ function ModuleRow({ courseId, mod }) {
 }
 
 export default function CoursesPage() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +133,7 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        <h2 className="text-lg font-bold text-navy mb-4">Courses / Курсы</h2>
+        <h2 className="text-lg font-bold text-navy mb-4">{t("your_courses")}</h2>
 
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -161,7 +156,7 @@ export default function CoursesPage() {
                       levelStyles[course.level] || "bg-slate-100 text-slate-600"
                     }`}
                   >
-                    {levelLabels[course.level] || course.level}
+                    {t("level")}: {t(course.level)}
                   </span>
                   <h3 className="text-lg font-bold text-navy mb-1.5">{course.title}</h3>
                   <p className="text-sm text-slate-500 line-clamp-2">{course.description}</p>

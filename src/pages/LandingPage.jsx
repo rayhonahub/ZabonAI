@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCountUp } from "../hooks/useCountUp";
+import { useTranslation } from "../i18n/useTranslation";
 import Logo from "../components/Logo";
 
 const FEATURES = [
@@ -46,12 +47,6 @@ const TESTIMONIALS = [
     name: "Нилуфар, Бухара",
     text: "Игра «Word Match» и ежедневный вызов делают учёбу похожей на игру, а не на домашку.",
   },
-];
-
-const TAGLINES = [
-  "Learn English with AI",
-  "Учи английский с помощью ИИ",
-  "Бо ёрии AI забони англисӣ омӯз",
 ];
 
 function useTypewriterCycle(words, { typeSpeed = 60, deleteSpeed = 30, pause = 1800 } = {}) {
@@ -122,7 +117,8 @@ function DemoMockup() {
 }
 
 export default function LandingPage() {
-  const tagline = useTypewriterCycle(TAGLINES);
+  const { t } = useTranslation();
+  const tagline = useTypewriterCycle([t("hero_title")]);
   const learners = useCountUp(500, 1400);
   const lessons = useCountUp(30, 1400);
   const aiFeatures = useCountUp(4, 1400);
@@ -137,7 +133,7 @@ export default function LandingPage() {
           to="/login"
           className="text-sm font-semibold text-navy hover:text-gold transition-colors"
         >
-          Login / Войти
+          {t("login")}
         </Link>
       </header>
 
@@ -161,10 +157,12 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6 min-h-[1.3em]">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-3 min-h-[1.3em]">
             {tagline}
             <span className="inline-block w-[3px] h-[1em] bg-gold ml-1 align-middle animate-typing" />
           </h1>
+
+          <p className="text-white/70 text-base sm:text-lg mb-9">{t("hero_subtitle")}</p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <Link
@@ -172,13 +170,13 @@ export default function LandingPage() {
               className="relative px-8 py-3.5 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
             >
               <span className="absolute inset-0 rounded-xl bg-gold animate-ping opacity-20" />
-              <span className="relative">Start Learning / Начать учиться →</span>
+              <span className="relative">{t("start_learning")} →</span>
             </Link>
             <Link
               to="/login"
               className="text-white/80 hover:text-white text-sm font-medium underline-offset-4 hover:underline transition-colors"
             >
-              Already have an account? Login / Войти
+              {t("already_have_account")}
             </Link>
           </div>
 

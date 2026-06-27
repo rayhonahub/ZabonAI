@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { useTranslation } from "../i18n/useTranslation";
 import Logo from "../components/Logo";
 
 function UserIcon() {
@@ -31,6 +32,7 @@ function LockIcon() {
 }
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -96,7 +98,7 @@ export default function RegisterPage() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full name / Имя"
+                placeholder={t("full_name")}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
               />
             </div>
@@ -110,7 +112,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t("email")}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
               />
             </div>
@@ -125,7 +127,7 @@ export default function RegisterPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password / Пароль"
+                placeholder={t("password")}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
               />
             </div>
@@ -135,14 +137,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              {loading ? "Creating account..." : "Create Account / Создать"}
+              {loading ? "Creating account..." : t("register")}
             </button>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{" "}
             <Link to="/login" className="text-navy font-semibold hover:text-gold transition-colors">
-              Sign in / Войти
+              {t("login")}
             </Link>
           </p>
         </div>

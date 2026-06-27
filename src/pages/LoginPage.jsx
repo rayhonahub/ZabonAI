@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { useTranslation } from "../i18n/useTranslation";
 import Logo from "../components/Logo";
 
 function MailIcon() {
@@ -22,6 +23,7 @@ function LockIcon() {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -81,7 +83,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t("email")}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
               />
             </div>
@@ -95,7 +97,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password / Пароль"
+                placeholder={t("password")}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-navy focus:ring-2 focus:ring-navy/10 outline-none transition-all duration-200 text-sm"
               />
             </div>
@@ -105,14 +107,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              {loading ? "Signing in..." : "Sign In / Войти"}
+              {loading ? "Signing in..." : t("login")}
             </button>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Don't have an account?{" "}
             <Link to="/register" className="text-navy font-semibold hover:text-gold transition-colors">
-              Register / Регистрация
+              {t("register")}
             </Link>
           </p>
         </div>
