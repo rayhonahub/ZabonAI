@@ -8,15 +8,26 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-2.5-flash")
 
+LANGUAGE_NAMES = {
+    "ru": "Russian",
+    "tj": "Tajik",
+    "en": "English",
+}
 
-def check_grammar(text: str) -> str:
+
+def _lang_instruction(lang: str) -> str:
+    name = LANGUAGE_NAMES.get(lang, "Russian")
+    return f"Explain in {name}."
+
+
+def check_grammar(text: str, lang: str = "ru") -> str:
     prompt = f"""
 You are an English grammar teacher.
 A student wrote: "{text}"
 
 1. Is this sentence correct?
 2. If not, write the corrected version.
-3. Explain the mistake briefly in Russian or Tajik.
+3. Explain the mistake briefly. {_lang_instruction(lang)}
 
 Format:
 ✅ Correct: [corrected sentence]
@@ -27,7 +38,7 @@ Format:
     return response.text
 
 
-def ask_tutor(question: str, lesson_context: str = None) -> str:
+def ask_tutor(question: str, lesson_context: str = None, lang: str = "ru") -> str:
     context = f"\nLesson context: {lesson_context}" if lesson_context else ""
     prompt = f"""
 You are a friendly English language tutor for Tajik speakers.
@@ -36,13 +47,13 @@ You are a friendly English language tutor for Tajik speakers.
 Student's question: {question}
 
 Answer clearly and simply. Use examples.
-Explain in Russian or Tajik when needed.
+{_lang_instruction(lang)}
 """
     response = model.generate_content(prompt)
     return response.text
 
 
-def analyze_screenshot(image_bytes: bytes, question: str = None) -> str:
+def analyze_screenshot(image_bytes: bytes, question: str = None, lang: str = "ru") -> str:
     import PIL.Image
     import io
 
@@ -57,7 +68,7 @@ Look at the image and:
 1. Explain what you see
 2. Answer the student's question
 3. Give helpful tips related to English learning
-Use simple language. Explain in Russian or Tajik when needed.
+Use simple language. {_lang_instruction(lang)}
 """
     response = model.generate_content([prompt, image])
     return response.text

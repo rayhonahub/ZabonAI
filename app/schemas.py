@@ -172,10 +172,12 @@ class ProfileStats(BaseModel):
 
 class GrammarCheckRequest(BaseModel):
     text: str
+    lang: str = "ru"
 
 class AskTutorRequest(BaseModel):
     question: str
     lesson_id: Optional[int] = None
+    lang: str = "ru"
 
 class AIResponse(BaseModel):
     response: str

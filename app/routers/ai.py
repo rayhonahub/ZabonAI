@@ -14,7 +14,7 @@ def grammar_check(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    response = ai_service.check_grammar(data.text)
+    response = ai_service.check_grammar(data.text, data.lang)
     history = models.AIChatHistory(
         user_id=current_user.id,
         message=data.text,
@@ -38,7 +38,7 @@ def ask_tutor(
         if lesson:
             lesson_context = f"Title: {lesson.title}\nContent: {lesson.content}"
 
-    response = ai_service.ask_tutor(data.question, lesson_context)
+    response = ai_service.ask_tutor(data.question, lesson_context, data.lang)
     history = models.AIChatHistory(
         user_id=current_user.id,
         lesson_id=data.lesson_id,
@@ -55,6 +55,7 @@ def ask_tutor(
 async def analyze_screenshot(
     file: UploadFile = File(...),
     question: Optional[str] = Form(None),
+    lang: str = Form("ru"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
@@ -62,7 +63,7 @@ async def analyze_screenshot(
         raise HTTPException(status_code=400, detail="Файл должен быть изображением")
 
     image_bytes = await file.read()
-    response = ai_service.analyze_screenshot(image_bytes, question)
+    response = ai_service.analyze_screenshot(image_bytes, question, lang)
 
     history = models.AIChatHistory(
         user_id=current_user.id,
