@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { LANGUAGES, getLang, setLang } from "../utils/lang";
 
 const links = [
   { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚" },
@@ -13,13 +14,21 @@ const links = [
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState(getLang());
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     api
-      .get("/auth/me")
-      .then((res) => setUser(res.data))
+      .get("/profile/me")
+      .then((res) => {
+        setUser(res.data);
+        if (res.data.selected_language) {
+          setCurrentLang(res.data.selected_language);
+          setLang(res.data.selected_language);
+        }
+      })
       .catch(() => setUser(null));
   }, []);
 
@@ -32,7 +41,15 @@ export default function Navbar() {
     navigate("/login");
   }
 
+  function handleLangChange(code) {
+    setCurrentLang(code);
+    setLang(code);
+    setLangOpen(false);
+    api.put("/profile/update", { selected_language: code }).catch(() => {});
+  }
+
   const initial = user?.full_name?.trim()?.[0]?.toUpperCase() || "?";
+  const activeLang = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
   return (
     <header className="sticky top-0 z-40 bg-navy/95 backdrop-blur text-white shadow-soft">
@@ -60,18 +77,44 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen((v) => !v)}
+              className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150"
+            >
+              <span>{activeLang.flag}</span>
+              <span>{activeLang.label}</span>
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-soft py-1.5 w-32 z-50 animate-fade-in">
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.code}
+                    onClick={() => handleLangChange(l.code)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors duration-150 ${
+                      l.code === currentLang ? "bg-slate-100 font-semibold text-navy" : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{l.flag}</span> {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {user && (
-            <div className="flex items-center gap-2">
+            <Link to="/profile" className="flex items-center gap-2">
               <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
                 🔥 {user.streak}
               </span>
               <div
                 title={user.full_name}
-                className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-light to-gold text-navy-dark font-bold text-sm flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: user.avatar_color }}
+                className="w-8 h-8 rounded-full text-white font-bold text-sm flex items-center justify-center shadow-sm"
               >
                 {initial}
               </div>
-            </div>
+            </Link>
           )}
           <button
             onClick={handleLogout}
@@ -117,16 +160,37 @@ export default function Navbar() {
           </div>
 
           {user && (
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-light to-gold text-navy-dark font-bold flex items-center justify-center">
+            <Link
+              to="/profile"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-5 py-4 border-b border-white/10"
+            >
+              <div
+                style={{ backgroundColor: user.avatar_color }}
+                className="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center"
+              >
                 {initial}
               </div>
               <div>
                 <p className="text-white font-semibold text-sm">{user.full_name}</p>
                 <p className="text-gold-light text-xs font-semibold">🔥 {user.streak} day streak</p>
               </div>
-            </div>
+            </Link>
           )}
+
+          <div className="flex items-center gap-1.5 px-5 py-3 border-b border-white/10">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => handleLangChange(l.code)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 ${
+                  l.code === currentLang ? "bg-gold text-navy-dark" : "bg-white/10 text-white/80"
+                }`}
+              >
+                {l.flag} {l.label}
+              </button>
+            ))}
+          </div>
 
           <nav className="flex-1 px-3 py-3 space-y-1">
             {links.map((l) => (

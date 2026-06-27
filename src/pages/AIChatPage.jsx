@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
+import { getLang } from "../utils/lang";
 
 const TAB_CONFIG = {
   grammar: {
@@ -185,7 +186,7 @@ export default function AIChatPage() {
       const payload = grammarText;
       setGrammarText("");
       try {
-        const res = await api.post("/ai/grammar-check", { text: payload });
+        const res = await api.post("/ai/grammar-check", { text: payload, lang: getLang() });
         updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
         updateMessage(setFn, tempId, {
@@ -205,6 +206,7 @@ export default function AIChatPage() {
         const res = await api.post("/ai/ask", {
           question: payload,
           lesson_id: tutorLessonId ? Number(tutorLessonId) : null,
+          lang: getLang(),
         });
         updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
@@ -228,6 +230,7 @@ export default function AIChatPage() {
       const form = new FormData();
       form.append("file", screenshotFile);
       if (screenshotText.trim()) form.append("question", screenshotText);
+      form.append("lang", getLang());
       setScreenshotText("");
       setScreenshotFile(null);
       try {
