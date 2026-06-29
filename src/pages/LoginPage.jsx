@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useTranslation } from "../i18n/useTranslation";
 import Logo from "../components/Logo";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 function MailIcon() {
   return (
@@ -23,6 +24,7 @@ function LockIcon() {
 }
 
 export default function LoginPage() {
+  usePageTitle("Login");
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

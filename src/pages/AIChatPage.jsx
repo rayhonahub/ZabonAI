@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Skeleton from "../components/Skeleton";
 import api from "../api/axios";
 import { getLang } from "../utils/lang";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const TAB_CONFIG = {
   grammar: {
@@ -121,6 +122,7 @@ function loadFromStorage(key) {
 }
 
 export default function AIChatPage() {
+  usePageTitle("AI Chat");
   const [searchParams] = useSearchParams();
   const defaultLessonId = searchParams.get("lesson_id") || "";
 

@@ -317,6 +317,7 @@ function SpellingBeeGame() {
 }
 
 export default function PracticePage() {
+  usePageTitle("Practice");
   const [activeTab, setActiveTab] = useState("match");
 
   return (

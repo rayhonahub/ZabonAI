@@ -10,6 +10,7 @@ import { extractVocab } from "../utils/extractVocab";
 import { parseSections, emojiForLesson } from "../utils/lessonSections";
 import { generatePracticeExercises } from "../utils/practiceExercises";
 import { showToast } from "../utils/toastBus";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 function readingTimeMinutes(content) {
   if (!content) return 1;
@@ -35,6 +36,7 @@ export default function LessonPage() {
   const { courseId, moduleId } = location.state || {};
 
   const [lesson, setLesson] = useState(null);
+  usePageTitle(lesson?.title);
   const [siblings, setSiblings] = useState(null);
   const [loading, setLoading] = useState(true);
 

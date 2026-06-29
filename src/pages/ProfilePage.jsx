@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { LANGUAGES, setLang } from "../utils/lang";
 import { AVATAR_STYLES, avatarUrl, randomAvatarSeed } from "../utils/avatar";
 import { showToast } from "../utils/toastBus";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const LEVEL_BANDS = [
   { key: "beginner", min: 0, max: 100, label: "Beginner 🌱" },
@@ -28,6 +29,7 @@ function levelProgress(xp) {
 }
 
 export default function ProfilePage() {
+  usePageTitle("Profile");
   const [profile, setProfile] = useState(null);
   const [activity, setActivity] = useState([]);
   const [referral, setReferral] = useState(null);

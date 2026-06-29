@@ -4,6 +4,7 @@ import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { showToast } from "../utils/toastBus";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const optionKeys = ["a", "b", "c", "d"];
 
@@ -20,6 +21,7 @@ function resultMessage(score) {
 }
 
 export default function QuizPage() {
+  usePageTitle("Quiz");
   const { id } = useParams();
   const navigate = useNavigate();
 

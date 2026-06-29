@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { showToast } from "../utils/toastBus";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const ITEMS = [
   {
@@ -35,6 +36,7 @@ const ITEMS = [
 ];
 
 export default function ShopPage() {
+  usePageTitle("Shop");
   const [coins, setCoins] = useState(Number(localStorage.getItem("coins") || 0));
 
   useEffect(() => {

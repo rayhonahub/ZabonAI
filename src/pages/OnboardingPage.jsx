@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const LEVELS = [
   {
@@ -60,6 +61,7 @@ const GOALS = [
 ];
 
 export default function OnboardingPage() {
+  usePageTitle("Onboarding");
   const [step, setStep] = useState(1);
   const [level, setLevel] = useState(null);
   const [goal, setGoal] = useState(null);

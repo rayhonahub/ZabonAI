@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useTranslation } from "../i18n/useTranslation";
 import Logo from "../components/Logo";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 function UserIcon() {
   return (
@@ -32,6 +33,7 @@ function LockIcon() {
 }
 
 export default function RegisterPage() {
+  usePageTitle("Register");
   const { t } = useTranslation();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

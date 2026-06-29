@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { extractVocab } from "../utils/extractVocab";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const DEFAULT_WORDS = [
   { word: "hello", translation: "привет" },
@@ -32,6 +33,7 @@ function buildCards(pairs) {
 }
 
 export default function WordGamePage() {
+  usePageTitle("Word Game");
   const [searchParams] = useSearchParams();
   const lessonId = searchParams.get("lesson_id");
 

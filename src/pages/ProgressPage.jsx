@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { useCountUp } from "../hooks/useCountUp";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 function levelFromXp(xp) {
   if (xp >= 300) return { label: "Intermediate", sub: "Продвинутый", color: "bg-purple-100 text-purple-700" };
@@ -107,6 +108,7 @@ function ScoreBars({ entries }) {
 }
 
 export default function ProgressPage() {
+  usePageTitle("Progress");
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [lessonsProgress, setLessonsProgress] = useState([]);

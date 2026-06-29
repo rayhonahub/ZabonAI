@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const QUESTION_SECONDS = 60;
 const LAST_DATE_KEY = "daily_challenge_last_date";
@@ -45,6 +46,7 @@ const MOCK_LEADERBOARD = [
 ];
 
 export default function DailyChallengePage() {
+  usePageTitle("Daily Challenge");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
