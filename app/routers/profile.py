@@ -106,3 +106,14 @@ def get_my_stats(
         total_quizzes_passed=current_user.total_quizzes_passed,
         average_score=average_score,
     )
+
+
+@router.get("/referral", response_model=schemas.ReferralInfo)
+def get_referral_info(current_user: models.User = Depends(get_current_user)):
+    referral_link = f"https://zaboniai.com/register?ref={current_user.referral_code}"
+    return schemas.ReferralInfo(
+        referral_code=current_user.referral_code,
+        referral_link=referral_link,
+        referral_count=current_user.referral_count,
+        coins_earned=current_user.referral_count * 50,
+    )

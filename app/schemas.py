@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+    ref_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -197,3 +198,10 @@ class AIResponse(BaseModel):
 
 class GenerateQuizRequest(BaseModel):
     lesson_id: int
+
+
+class ReferralInfo(BaseModel):
+    referral_code: Optional[str] = None
+    referral_link: str
+    referral_count: int
+    coins_earned: int

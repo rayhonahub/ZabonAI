@@ -112,5 +112,9 @@ class User(Base):
     total_quizzes_passed = Column(Integer, default=0)
     coins = Column(Integer, default=0)
 
+    referral_code = Column(String, unique=True, nullable=True)
+    referred_by = Column(String, nullable=True)
+    referral_count = Column(Integer, default=0)
+
     progress = relationship("UserProgress", back_populates="user")
     chat_history = relationship("AIChatHistory", back_populates="user")

@@ -1,3 +1,4 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -8,18 +9,37 @@ from app.deps import get_db, get_current_user
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
+def generate_referral_code(db: Session) -> str:
+    while True:
+        code = secrets.token_urlsafe(8)
+        if not db.query(models.User).filter(models.User.referral_code == code).first():
+            return code
+
+
 @router.post("/register", response_model=schemas.UserResponse)
 def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email уже используется")
 
+    referrer = None
+    if user_data.ref_code:
+        referrer = db.query(models.User).filter(models.User.referral_code == user_data.ref_code).first()
+
     user = models.User(
         full_name=user_data.full_name,
         email=user_data.email,
-        password=hash_password(user_data.password)
+        password=hash_password(user_data.password),
+        referral_code=generate_referral_code(db),
+        referred_by=user_data.ref_code if referrer else None,
+        coins=20 if referrer else 0,
     )
     db.add(user)
+
+    if referrer:
+        referrer.coins += 50
+        referrer.referral_count += 1
+
     db.commit()
     db.refresh(user)
     return user

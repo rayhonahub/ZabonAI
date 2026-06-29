@@ -30,6 +30,9 @@ def run_migrations():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_lessons_completed INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_quizzes_passed INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by VARCHAR",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_count INTEGER DEFAULT 0",
     ]
     with engine.begin() as conn:
         for stmt in statements:
