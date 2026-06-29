@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { LANGUAGES, setLang } from "../utils/lang";
-
-const AVATAR_COLORS = [
-  "#f0a500", "#1e3a5f", "#10b981", "#3b82f6", "#a855f7",
-  "#ec4899", "#f43f5e", "#f97316", "#14b8a6", "#6366f1",
-];
+import { AVATAR_STYLES, avatarUrl, randomAvatarSeed } from "../utils/avatar";
 
 const LEVEL_BANDS = [
   { key: "beginner", min: 0, max: 100, label: "Beginner 🌱" },
@@ -16,10 +12,11 @@ const LEVEL_BANDS = [
 ];
 
 const ACHIEVEMENTS = [
-  { key: "first_lesson", emoji: "🥇", title: "First Lesson", sub: "Первый урок", check: (s) => s.total_lessons_completed >= 1 },
+  { key: "first_steps", emoji: "🥇", title: "First Steps", sub: "Первый шаг", check: (s) => s.total_lessons_completed >= 1 },
   { key: "on_fire", emoji: "🔥", title: "On Fire", sub: "3-дневная серия", check: (s) => s.streak >= 3 },
   { key: "quiz_master", emoji: "🧠", title: "Quiz Master", sub: "5 тестов пройдено", check: (s) => s.total_quizzes_passed >= 5 },
   { key: "bookworm", emoji: "📖", title: "Bookworm", sub: "10 уроков пройдено", check: (s) => s.total_lessons_completed >= 10 },
+  { key: "traveler", emoji: "✈️", title: "Traveler", sub: "Курс Travel English пройден", check: (s) => s.travel_completed },
 ];
 
 function levelProgress(xp) {
@@ -35,7 +32,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ full_name: "", bio: "", avatar_color: "", selected_language: "ru" });
+  const [form, setForm] = useState({ full_name: "", bio: "", selected_language: "ru" });
+  const [editingName, setEditingName] = useState(false);
+  const [editingBio, setEditingBio] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [bioDraft, setBioDraft] = useState("");
 
   useEffect(() => {
     Promise.all([api.get("/profile/me"), api.get("/progress/lessons")])
@@ -44,7 +45,6 @@ export default function ProfilePage() {
         setForm({
           full_name: profileRes.data.full_name,
           bio: profileRes.data.bio || "",
-          avatar_color: profileRes.data.avatar_color,
           selected_language: profileRes.data.selected_language,
         });
         setActivity(progressRes.data.slice(0, 5));
@@ -52,17 +52,59 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  async function saveProfile(patch) {
+    const res = await api.put("/profile/update", patch);
+    setProfile(res.data);
+    return res.data;
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await api.put("/profile/update", form);
-      setProfile(res.data);
-      setLang(res.data.selected_language);
+      const data = await saveProfile(form);
+      setLang(data.selected_language);
       setEditing(false);
     } catch {
       // keep the form open so the user can retry
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleStyleChange(style) {
+    try {
+      await saveProfile({ avatar_style: style });
+    } catch {
+      // ignore, avatar stays as-is
+    }
+  }
+
+  async function handleRandomize() {
+    try {
+      await saveProfile({ avatar_seed: randomAvatarSeed() });
+    } catch {
+      // ignore, avatar stays as-is
+    }
+  }
+
+  async function handleNameSave() {
+    setEditingName(false);
+    const trimmed = nameDraft.trim();
+    if (!trimmed || trimmed === profile.full_name) return;
+    try {
+      await saveProfile({ full_name: trimmed });
+    } catch {
+      // ignore, name stays as-is
+    }
+  }
+
+  async function handleBioSave() {
+    setEditingBio(false);
+    if (bioDraft === (profile.bio || "")) return;
+    try {
+      await saveProfile({ bio: bioDraft });
+    } catch {
+      // ignore, bio stays as-is
     }
   }
 
@@ -80,7 +122,6 @@ export default function ProfilePage() {
     );
   }
 
-  const initial = profile.full_name?.trim()?.[0]?.toUpperCase() || "?";
   const { band, percent, toNext } = levelProgress(profile.xp_points);
 
   return (
@@ -88,22 +129,81 @@ export default function ProfilePage() {
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-6">
         <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-6">
-            <div
-              style={{ backgroundColor: profile.avatar_color }}
-              className="w-20 h-20 rounded-full text-white font-extrabold text-3xl flex items-center justify-center shadow-sm flex-shrink-0"
-            >
-              {initial}
+          <div className="flex flex-col items-center text-center gap-3">
+            <img
+              src={avatarUrl(profile.avatar_style, profile.avatar_seed)}
+              alt={profile.full_name}
+              className="w-[120px] h-[120px] rounded-full bg-slate-100 shadow-sm"
+            />
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {AVATAR_STYLES.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => handleStyleChange(s.key)}
+                  title={s.label}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 ${
+                    profile.avatar_style === s.key
+                      ? "bg-navy text-white shadow-sm"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  }`}
+                >
+                  <span>{s.emoji}</span> {s.label}
+                </button>
+              ))}
+              <button
+                onClick={handleRandomize}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-gold/15 text-navy hover:bg-gold/25 transition-all duration-150"
+              >
+                🎲 Randomize
+              </button>
             </div>
-            <div className="flex-1 min-w-[200px]">
-              <h1 className="text-2xl font-extrabold text-navy">{profile.full_name}</h1>
-              <p className="text-sm text-slate-400 mb-2">{profile.email}</p>
-              {profile.bio && <p className="text-sm text-slate-600 mb-2">{profile.bio}</p>}
-              <div className="flex items-center gap-2 mb-1">
+
+            {editingName ? (
+              <input
+                autoFocus
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => e.key === "Enter" && handleNameSave()}
+                className="text-2xl font-extrabold text-navy text-center border-b-2 border-navy/30 outline-none bg-transparent"
+              />
+            ) : (
+              <h1
+                onClick={() => { setNameDraft(profile.full_name); setEditingName(true); }}
+                title="Click to edit / Нажмите для редактирования"
+                className="text-2xl font-extrabold text-navy cursor-pointer hover:opacity-70 transition-opacity duration-150"
+              >
+                {profile.full_name}
+              </h1>
+            )}
+            <p className="text-sm text-slate-400">{profile.email}</p>
+
+            {editingBio ? (
+              <textarea
+                autoFocus
+                rows={2}
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                onBlur={handleBioSave}
+                className="text-sm text-slate-600 text-center border border-slate-200 rounded-lg outline-none w-full max-w-md p-2 resize-none"
+              />
+            ) : (
+              <p
+                onClick={() => { setBioDraft(profile.bio || ""); setEditingBio(true); }}
+                title="Click to edit / Нажмите для редактирования"
+                className="text-sm text-slate-500 cursor-pointer hover:opacity-70 transition-opacity duration-150 max-w-md"
+              >
+                {profile.bio || "Add a bio / Добавить описание"}
+              </p>
+            )}
+
+            <div className="w-full max-w-xs">
+              <div className="flex items-center justify-center gap-2 mb-1">
                 <span className="text-sm font-bold text-navy">{band.label}</span>
                 <span className="text-xs text-slate-400">{profile.xp_points} XP</span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-xs">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-navy to-gold rounded-full transition-all duration-700"
                   style={{ width: `${percent}%` }}
@@ -113,9 +213,10 @@ export default function ProfilePage() {
                 <p className="text-xs text-slate-400 mt-1">{toNext} XP to next level</p>
               )}
             </div>
+
             <button
               onClick={() => setEditing((v) => !v)}
-              className="px-5 py-2.5 rounded-xl font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-md shadow-gold/20 hover:shadow-gold/40 transition-all duration-200 flex-shrink-0"
+              className="mt-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-md shadow-gold/20 hover:shadow-gold/40 transition-all duration-200"
             >
               {editing ? "Close / Закрыть" : "Edit Profile / Редактировать"}
             </button>
@@ -160,30 +261,21 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-slate-400 mb-1.5 block">
-                  Avatar color / Цвет аватара
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATAR_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setForm((f) => ({ ...f, avatar_color: c }))}
-                      style={{ backgroundColor: c }}
-                      className={`w-9 h-9 rounded-full transition-all duration-150 ${
-                        form.avatar_color === c ? "ring-2 ring-offset-2 ring-navy scale-110" : "hover:scale-105"
-                      }`}
-                    />
-                  ))}
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-sm text-white bg-navy hover:bg-navy-light transition-all duration-200 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save / Сохранить"}
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all duration-200"
+                >
+                  Cancel / Отмена
+                </button>
               </div>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-6 py-2.5 rounded-xl font-semibold text-sm text-white bg-navy hover:bg-navy-light transition-all duration-200 disabled:opacity-60"
-              >
-                {saving ? "Saving..." : "Save / Сохранить"}
-              </button>
             </div>
           )}
         </div>
@@ -192,22 +284,23 @@ export default function ProfilePage() {
           <StatCard emoji="🔥" value={profile.streak} label="Day streak" sub="дней подряд" />
           <StatCard emoji="⭐" value={profile.xp_points} label="XP points" sub="очков опыта" />
           <StatCard emoji="📚" value={profile.total_lessons_completed} label="Lessons done" sub="уроков пройдено" />
-          <StatCard emoji="🏆" value={profile.total_quizzes_passed} label="Quizzes passed" sub="тестов пройдено" />
+          <StatCard emoji="💎" value={profile.coins} label="Coins" sub="монеты" />
         </div>
 
         <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8">
           <h2 className="text-lg font-bold text-navy mb-1">Achievements</h2>
           <p className="text-sm text-slate-400 mb-5">Достижения</p>
-          <div className="grid sm:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-5 gap-4">
             {ACHIEVEMENTS.map((a) => {
               const unlocked = a.check(profile);
               return (
                 <div
                   key={a.key}
-                  className={`rounded-xl p-4 text-center border-2 transition-all duration-200 ${
+                  className={`relative rounded-xl p-4 text-center border-2 transition-all duration-200 ${
                     unlocked ? "border-gold bg-gold/5" : "border-slate-100 bg-slate-50 opacity-50"
                   }`}
                 >
+                  {!unlocked && <span className="absolute top-2 right-2 text-sm">🔒</span>}
                   <div className={`text-3xl mb-1 ${unlocked ? "" : "grayscale"}`}>{a.emoji}</div>
                   <p className="text-sm font-bold text-navy">{a.title}</p>
                   <p className="text-xs text-slate-400">{a.sub}</p>

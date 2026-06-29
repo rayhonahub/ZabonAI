@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { LANGUAGES, getLang, setLang } from "../utils/lang";
 import { useTranslation } from "../i18n/useTranslation";
+import { avatarUrl } from "../utils/avatar";
 import Logo from "./Logo";
 
 const links = [
@@ -68,7 +69,6 @@ export default function Navbar() {
     api.put("/profile/update", { selected_language: code }).catch(() => {});
   }
 
-  const initial = user?.full_name?.trim()?.[0]?.toUpperCase() || "?";
   const activeLang = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
   return (
@@ -146,13 +146,12 @@ export default function Navbar() {
               <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
                 💎 {coins}
               </span>
-              <div
+              <img
+                src={avatarUrl(user.avatar_style, user.avatar_seed)}
+                alt={user.full_name}
                 title={user.full_name}
-                style={{ backgroundColor: user.avatar_color }}
-                className="w-8 h-8 rounded-full text-white font-bold text-sm flex items-center justify-center shadow-sm"
-              >
-                {initial}
-              </div>
+                className="w-8 h-8 rounded-full bg-white/10 shadow-sm"
+              />
             </Link>
           )}
           <button
@@ -206,12 +205,11 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-5 py-4 border-b border-white/10"
             >
-              <div
-                style={{ backgroundColor: user.avatar_color }}
-                className="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center"
-              >
-                {initial}
-              </div>
+              <img
+                src={avatarUrl(user.avatar_style, user.avatar_seed)}
+                alt={user.full_name}
+                className="w-10 h-10 rounded-full bg-white/10"
+              />
               <div>
                 <p className="text-white font-semibold text-sm">{user.full_name}</p>
                 <p className="text-gold-light text-xs font-semibold">🔥 {user.streak} day streak</p>
