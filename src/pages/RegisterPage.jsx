@@ -40,6 +40,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const refCode = new URLSearchParams(window.location.search).get("ref");
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -49,6 +51,7 @@ export default function RegisterPage() {
         full_name: fullName,
         email,
         password,
+        ref_code: refCode || undefined,
       });
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
@@ -81,6 +84,12 @@ export default function RegisterPage() {
         <div className="bg-white rounded-2xl shadow-soft p-8">
           <h2 className="text-xl font-bold text-navy mb-1">Create account</h2>
           <p className="text-sm text-slate-400 mb-6">Создать аккаунт</p>
+
+          {refCode && (
+            <div className="mb-4 text-sm bg-gold/15 text-navy-dark border border-gold/30 rounded-lg px-3 py-2 animate-fade-in">
+              🎁 Тебя пригласил друг! Ты получишь 20 монет после регистрации!
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 text-sm bg-red-50 text-red-600 border border-red-100 rounded-lg px-3 py-2 animate-fade-in">

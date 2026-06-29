@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { LANGUAGES, setLang } from "../utils/lang";
 import { AVATAR_STYLES, avatarUrl, randomAvatarSeed } from "../utils/avatar";
+import { showToast } from "../utils/toastBus";
 
 const LEVEL_BANDS = [
   { key: "beginner", min: 0, max: 100, label: "Beginner 🌱" },
@@ -29,6 +30,7 @@ function levelProgress(xp) {
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [activity, setActivity] = useState([]);
+  const [referral, setReferral] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,8 +41,8 @@ export default function ProfilePage() {
   const [bioDraft, setBioDraft] = useState("");
 
   useEffect(() => {
-    Promise.all([api.get("/profile/me"), api.get("/progress/lessons")])
-      .then(([profileRes, progressRes]) => {
+    Promise.all([api.get("/profile/me"), api.get("/progress/lessons"), api.get("/profile/referral")])
+      .then(([profileRes, progressRes, referralRes]) => {
         setProfile(profileRes.data);
         setForm({
           full_name: profileRes.data.full_name,
@@ -48,9 +50,15 @@ export default function ProfilePage() {
           selected_language: profileRes.data.selected_language,
         });
         setActivity(progressRes.data.slice(0, 5));
+        setReferral(referralRes.data);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  function handleCopyReferralLink() {
+    navigator.clipboard.writeText(referral.referral_link);
+    showToast("✅ Ссылка скопирована!", "success");
+  }
 
   async function saveProfile(patch) {
     const res = await api.put("/profile/update", patch);
@@ -309,6 +317,53 @@ export default function ProfilePage() {
             })}
           </div>
         </div>
+
+        {referral && (
+          <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-navy mb-1">Пригласи друга / Даъват кун дӯстро 🎁</h2>
+            <p className="text-sm text-slate-500 mb-1">За каждого приглашённого друга ты получаешь 💎 50 монет!</p>
+            <p className="text-sm text-slate-500 mb-5">Твой друг получает 💎 20 монет в подарок!</p>
+
+            <div className="flex flex-col sm:flex-row gap-2 mb-5">
+              <input
+                readOnly
+                value={referral.referral_link}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 outline-none text-sm text-slate-600"
+              />
+              <button
+                onClick={handleCopyReferralLink}
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-navy hover:bg-navy-light transition-all duration-200 whitespace-nowrap"
+              >
+                Copy 📋
+              </button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-5">
+              <StatCard emoji="👥" value={referral.referral_count} label="Приглашено друзей" sub="referrals" />
+              <StatCard emoji="💎" value={referral.coins_earned} label="Заработано монет" sub="coins earned" />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(referral.referral_link)}&text=${encodeURIComponent("Учи английский бесплатно с ИИ!")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#229ED9] hover:opacity-90 transition-all duration-200"
+              >
+                📱 Поделиться в Telegram
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Учи английский с ZaboniAI! ${referral.referral_link}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#25D366] hover:opacity-90 transition-all duration-200"
+              >
+                📲 Поделиться в WhatsApp
+              </a>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8">
           <h2 className="text-lg font-bold text-navy mb-1">Recent Activity</h2>
