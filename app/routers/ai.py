@@ -132,6 +132,48 @@ def generate_quiz(
     return {"message": f"{len(questions)} вопросов сгенерировано", "questions": questions}
 
 
+@router.post("/voice-check")
+async def voice_grammar_check(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """User records voice → convert to text → AI checks grammar"""
+    import speech_recognition as sr
+    import io
+
+    audio_bytes = await file.read()
+
+    recognizer = sr.Recognizer()
+    try:
+        audio_file = sr.AudioFile(io.BytesIO(audio_bytes))
+        with audio_file as source:
+            audio = recognizer.record(source)
+        text = recognizer.recognize_google(audio, language="en-US")
+    except Exception:
+        text = None
+
+    if not text:
+        return {"error": "Could not recognize speech. Please speak clearly."}
+
+    response = ai_service.check_grammar(text)
+
+    history = models.AIChatHistory(
+        user_id=current_user.id,
+        message=f"[VOICE] {text}",
+        response=response,
+        chat_type="voice"
+    )
+    db.add(history)
+    db.commit()
+
+    return {
+        "recognized_text": text,
+        "grammar_check": response,
+        "chat_type": "voice"
+    }
+
+
 @router.get("/history")
 def get_chat_history(
     db: Session = Depends(get_db),
