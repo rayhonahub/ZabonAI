@@ -102,6 +102,8 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     avatar_color = Column(String, default=lambda: random.choice(AVATAR_COLORS))
+    avatar_style = Column(String, default="adventurer")
+    avatar_seed = Column(String, default="default")
     bio = Column(Text, nullable=True)
     selected_language = Column(String, default="ru")
     xp_points = Column(Integer, default=0)

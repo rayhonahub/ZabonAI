@@ -19,6 +19,9 @@ class UserResponse(BaseModel):
     email: str
     streak: int
     coins: int
+    avatar_style: str = "adventurer"
+    avatar_seed: str = "default"
+    bio: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -145,6 +148,8 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     bio: Optional[str] = None
     avatar_color: Optional[str] = None
+    avatar_style: Optional[str] = None
+    avatar_seed: Optional[str] = None
     selected_language: Optional[str] = None
 
 class ProfileResponse(BaseModel):
@@ -153,13 +158,17 @@ class ProfileResponse(BaseModel):
     email: str
     bio: Optional[str] = None
     avatar_color: str
+    avatar_style: str
+    avatar_seed: str
     selected_language: str
     streak: int
+    coins: int
     xp_points: int
     level: str
     level_label: str
     total_lessons_completed: int
     total_quizzes_passed: int
+    travel_completed: bool = False
     created_at: datetime
 
 class ProfileStats(BaseModel):

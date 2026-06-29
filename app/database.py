@@ -21,6 +21,8 @@ def run_migrations():
     existed in the live database."""
     statements = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR DEFAULT '#f0a500'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_style VARCHAR DEFAULT 'adventurer'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_seed VARCHAR DEFAULT 'default'",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS selected_language VARCHAR DEFAULT 'ru'",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_points INTEGER DEFAULT 0",
