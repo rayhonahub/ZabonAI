@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import VocabCard from "../components/VocabCard";
+import VoiceModal from "../components/VoiceModal";
 import api from "../api/axios";
 import { extractVocab } from "../utils/extractVocab";
 import { parseSections, emojiForLesson } from "../utils/lessonSections";
@@ -215,6 +216,7 @@ export default function LessonPage() {
             Start Lesson / Начать урок →
           </button>
         </div>
+        <VoiceModal lessonId={lesson.id} />
       </div>
     );
   }
@@ -282,6 +284,7 @@ export default function LessonPage() {
             </button>
           </div>
         </div>
+        <VoiceModal lessonId={lesson.id} />
       </div>
     );
   }
@@ -339,6 +342,7 @@ export default function LessonPage() {
             }
           `}</style>
         </div>
+        <VoiceModal lessonId={lesson.id} />
       </div>
     );
   }
@@ -390,6 +394,7 @@ export default function LessonPage() {
           </div>
         </div>
       </div>
+      <VoiceModal lessonId={lesson.id} />
     </div>
   );
 }

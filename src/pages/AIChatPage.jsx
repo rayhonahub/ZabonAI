@@ -48,9 +48,23 @@ const TAB_CONFIG = {
     focusRing: "focus:border-purple-500 focus:ring-purple-500/10",
     dot: "bg-purple-600/40",
   },
+  voice: {
+    label: "🎤 Voice",
+    sub: "Голосовая практика",
+    storageKey: "voice_chat",
+    backendType: "voice",
+    placeholder: "",
+    tabActive: "bg-rose-600 text-white shadow-sm",
+    userBubble: "bg-rose-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
+    aiBubble: "bg-rose-50 border-rose-200 text-slate-700",
+    badge: "bg-rose-100 text-rose-700",
+    sendBtn: "bg-gradient-to-r from-rose-500 to-rose-600 shadow-rose-500/30 hover:shadow-rose-500/50",
+    focusRing: "focus:border-rose-500 focus:ring-rose-500/10",
+    dot: "bg-rose-600/40",
+  },
 };
 
-const TAB_ORDER = ["grammar", "tutor", "screenshot"];
+const TAB_ORDER = ["grammar", "tutor", "screenshot", "voice"];
 
 function UploadIcon() {
   return (
@@ -65,6 +79,16 @@ function SendIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="m3 12 18-8-8 18-2-8-8-2Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" strokeLinecap="round" />
+      <path d="M12 19v4M8 23h8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -106,6 +130,7 @@ export default function AIChatPage() {
   const [grammarMessages, setGrammarMessages] = useState(() => loadFromStorage(TAB_CONFIG.grammar.storageKey));
   const [tutorMessages, setTutorMessages] = useState(() => loadFromStorage(TAB_CONFIG.tutor.storageKey));
   const [screenshotMessages, setScreenshotMessages] = useState(() => loadFromStorage(TAB_CONFIG.screenshot.storageKey));
+  const [voiceMessages, setVoiceMessages] = useState(() => loadFromStorage(TAB_CONFIG.voice.storageKey));
 
   const [grammarText, setGrammarText] = useState("");
   const [tutorText, setTutorText] = useState("");
@@ -114,6 +139,10 @@ export default function AIChatPage() {
   const [screenshotFile, setScreenshotFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
+  const [voiceStatus, setVoiceStatus] = useState("idle"); // idle | recording | processing | done | error
+  const [voiceRecognizedText, setVoiceRecognizedText] = useState("");
+  const [voiceAiResponse, setVoiceAiResponse] = useState("");
+
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -121,6 +150,7 @@ export default function AIChatPage() {
     grammar: [grammarMessages, setGrammarMessages],
     tutor: [tutorMessages, setTutorMessages],
     screenshot: [screenshotMessages, setScreenshotMessages],
+    voice: [voiceMessages, setVoiceMessages],
   };
   const [messages, setMessages] = stateByTab[activeTab];
   const cfg = TAB_CONFIG[activeTab];
@@ -132,7 +162,7 @@ export default function AIChatPage() {
       .get("/ai/history")
       .then((res) => {
         const sorted = [...res.data].reverse();
-        const byType = { grammar: [], tutor: [], screenshot: [] };
+        const byType = { grammar: [], tutor: [], screenshot: [], voice: [] };
         sorted.forEach((h) => {
           const key = byType[h.chat_type] ? h.chat_type : "tutor";
           byType[key].push({
@@ -145,6 +175,7 @@ export default function AIChatPage() {
         if (grammarMessages.length === 0 && byType.grammar.length) setGrammarMessages(byType.grammar);
         if (tutorMessages.length === 0 && byType.tutor.length) setTutorMessages(byType.tutor);
         if (screenshotMessages.length === 0 && byType.screenshot.length) setScreenshotMessages(byType.screenshot);
+        if (voiceMessages.length === 0 && byType.voice.length) setVoiceMessages(byType.voice);
       })
       .finally(() => setHistoryLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,6 +190,9 @@ export default function AIChatPage() {
   useEffect(() => {
     localStorage.setItem(TAB_CONFIG.screenshot.storageKey, JSON.stringify(screenshotMessages));
   }, [screenshotMessages]);
+  useEffect(() => {
+    localStorage.setItem(TAB_CONFIG.voice.storageKey, JSON.stringify(voiceMessages));
+  }, [voiceMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -247,6 +281,46 @@ export default function AIChatPage() {
         });
       }
     }
+  }
+
+  function startVoiceRecording() {
+    const SpeechRecognitionImpl = window.webkitSpeechRecognition || window.SpeechRecognition;
+    if (!SpeechRecognitionImpl) {
+      setVoiceStatus("error");
+      return;
+    }
+
+    setVoiceRecognizedText("");
+    setVoiceAiResponse("");
+
+    const recognition = new SpeechRecognitionImpl();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setVoiceStatus("recording");
+
+    recognition.onresult = async (event) => {
+      const text = event.results[0][0].transcript;
+      setVoiceRecognizedText(text);
+      setVoiceStatus("processing");
+      try {
+        const res = await api.post("/ai/grammar-check", { text, lang: getLang() });
+        setVoiceAiResponse(res.data.response);
+        setVoiceStatus("done");
+        addMessage(setVoiceMessages, {
+          id: `voice-${Date.now()}`,
+          message: `[VOICE] ${text}`,
+          response: res.data.response,
+          pending: false,
+        });
+      } catch {
+        setVoiceStatus("error");
+      }
+    };
+
+    recognition.onerror = () => setVoiceStatus("error");
+    recognition.start();
   }
 
   function handleDrop(e) {
@@ -350,6 +424,45 @@ export default function AIChatPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-card p-4">
+          {activeTab === "voice" ? (
+            <div className="flex flex-col items-center text-center py-2">
+              <button
+                onClick={startVoiceRecording}
+                disabled={voiceStatus === "recording" || voiceStatus === "processing"}
+                className={`w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 mb-4 disabled:opacity-70 ${
+                  voiceStatus === "recording" ? "bg-red-500 animate-pulse" : "bg-rose-600 hover:bg-rose-700"
+                }`}
+              >
+                <MicIcon />
+              </button>
+
+              <p className="text-sm text-slate-500 mb-4">
+                {voiceStatus === "idle" && "Нажми кнопку и говори по-английски"}
+                {voiceStatus === "recording" && "🔴 Запись... говори сейчас!"}
+                {voiceStatus === "processing" && "⏳ Обрабатываем..."}
+                {voiceStatus === "error" && "❌ Не удалось распознать речь / Voice not supported"}
+                {voiceStatus === "done" && "✅ Готово"}
+              </p>
+
+              {voiceStatus === "done" && (
+                <div className="text-left w-full space-y-2 mb-4">
+                  <p className="text-sm bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+                    📝 You said: {voiceRecognizedText}
+                  </p>
+                  <p className="text-sm bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 whitespace-pre-wrap">
+                    🤖 AI Feedback: {voiceAiResponse}
+                  </p>
+                </div>
+              )}
+
+              {(voiceStatus === "done" || voiceStatus === "error") && (
+                <button onClick={startVoiceRecording} className="text-sm font-semibold text-rose-600 hover:underline">
+                  Try Again / Попробовать снова
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
           {activeTab === "tutor" && (
             <input
               value={tutorLessonId}
@@ -416,7 +529,21 @@ export default function AIChatPage() {
               <SendIcon />
             </button>
           </div>
+            </>
+          )}
         </div>
+
+        {activeTab === "voice" && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mt-4 text-sm text-slate-600">
+            <p className="font-semibold text-amber-700 mb-2">💡 Tips for voice practice / Советы:</p>
+            <ul className="space-y-1 list-disc pl-5">
+              <li>Speak slowly and clearly</li>
+              <li>Use complete sentences</li>
+              <li>Practice: "I am a student. I study English every day."</li>
+              <li>Try: "Yesterday I went to school"</li>
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
