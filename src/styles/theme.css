@@ -1,0 +1,46 @@
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(10px, -14px); }
+  66% { transform: translate(-8px, 8px); }
+}
+
+@keyframes drift2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-12px, -10px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes lineGrow {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.drift-1 { animation: drift 7s ease-in-out infinite; }
+.drift-2 { animation: drift2 6s ease-in-out infinite 0.6s; }
+.glow-pulse { animation: glowPulse 2.4s ease-in-out infinite; }
+.line-grow { stroke-dasharray: 400; animation: lineGrow 2.5s ease-out forwards; }
+.fade-up-1 { animation: fadeUp 0.6s ease 0.1s both; }
+.fade-up-2 { animation: fadeUp 0.6s ease 0.25s both; }
+.fade-up-3 { animation: fadeUp 0.6s ease 0.4s both; }
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(45, 212, 191, 0.35);
+  transform: translateY(-2px);
+}

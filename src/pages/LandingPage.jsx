@@ -2,25 +2,26 @@ import { Link } from "react-router-dom";
 import { BookOpen, Layers, Sparkles, Brain, Camera, Flame, Gem } from "lucide-react";
 import { useCountUp } from "../hooks/useCountUp";
 import { usePageTitle } from "../hooks/usePageTitle";
+import NeuralBackground from "../components/NeuralBackground";
 
 const FEATURES = [
   {
     Icon: Sparkles,
-    color: "#6D4FF0",
+    color: "#14B8A6",
     title: "AI Tutor",
     sub: "AI Репетитор",
     desc: "Объясняет на русском и таджикском языках",
   },
   {
     Icon: Brain,
-    color: "#FF5C8A",
+    color: "#FBBF24",
     title: "Smart Quiz",
     sub: "Умный тест",
     desc: "Тест после каждого урока — учись умнее",
   },
   {
     Icon: Camera,
-    color: "#6D4FF0",
+    color: "#14B8A6",
     title: "Screenshot Help",
     sub: "Помощь по скриншоту",
     desc: "Загрузи скриншот — AI объяснит всё",
@@ -48,138 +49,184 @@ export default function LandingPage() {
   const lessons = useCountUp(28, 1400);
 
   return (
-    <div className="min-h-screen page-enter" style={{ background: '#F4F1FF' }}>
+    <div className="min-h-screen page-enter" style={{ background: '#061A1C' }}>
+
+      {/* Landing nav */}
+      <nav style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 2.5rem',
+        height: 60,
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+        background: 'rgba(9,20,24,0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(45,212,191,0.15)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            background: 'linear-gradient(135deg, #0D9488, #22D3EE)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <span style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Z</span>
+          </div>
+          <span style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>ZaboniAI</span>
+        </div>
+        <div className="hidden sm:flex" style={{ gap: 28 }}>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>Курсҳо</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>Бозӣ</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>Мағоза</span>
+        </div>
+        <Link to="/login">
+          <button style={{
+            background: '#14B8A6',
+            color: '#04231F',
+            border: 'none',
+            borderRadius: 6,
+            padding: '8px 20px',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}>Дохил шудан</button>
+        </Link>
+      </nav>
 
       {/* Hero section */}
-      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #F4F1FF 0%, #FFFFFF 55%, #FFF5F8 100%)' }}>
+      <section style={{
+        position: 'relative',
+        minHeight: 560,
+        background: 'linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)',
+        overflow: 'hidden',
+        padding: '4rem 2.5rem',
+      }}>
+        <NeuralBackground />
 
-        {/* Nav */}
-        <nav className="flex items-center justify-between px-7 py-4 sticky top-0 z-40" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(109,79,240,0.1)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6D4FF0,#9B82FF)' }}>
-              <span className="font-sora font-extrabold text-white text-sm">Z</span>
-            </div>
-            <span className="font-sora font-bold text-sm" style={{ color: '#1A1532' }}>ZaboniAI</span>
-          </div>
-          <div className="hidden sm:flex gap-7 text-sm font-medium" style={{ color: '#534A7A' }}>
-            <span>Курсҳо</span>
-            <span>Бозӣ</span>
-            <span>Мағоза</span>
-          </div>
-          <Link to="/login">
-            <button className="rounded-lg px-5 py-2 text-sm font-semibold text-white" style={{ background: '#6D4FF0' }}>Дохил шудан</button>
-          </Link>
-        </nav>
-
-        {/* Two-column hero */}
-        <div className="grid md:grid-cols-2 gap-8 items-center px-7 sm:px-10 py-16 fade-in-up">
-          {/* Left: text */}
-          <div>
-            <p className="text-xs tracking-widest uppercase mb-3 font-bold" style={{ color: '#6D4FF0' }}>AI-platformai omuzishi zabon</p>
-            <h1 className="font-sora font-extrabold text-5xl leading-tight mb-4" style={{ color: '#1A1532' }}>
-              Забони англисиро бо зеҳни сунъӣ омӯз
-            </h1>
-            <p className="text-base leading-relaxed mb-8 max-w-md" style={{ color: '#6B6488' }}>
-              Дарси шахсишуда, тести оқилона ва ёрдамчии AI, ки ҳамеша дар канори туст
-            </p>
-            <div className="flex flex-wrap gap-3 mb-12">
-              <Link to="/register">
-                <button className="rounded-xl px-7 py-3.5 font-semibold text-white" style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)', boxShadow: '0 8px 20px rgba(109,79,240,0.25)' }}>
-                  Оғоз кардан
-                </button>
-              </Link>
-              <Link to="/login">
-                <button className="rounded-xl px-7 py-3.5 font-semibold" style={{ background: 'white', color: '#1A1532', border: '1px solid rgba(109,79,240,0.2)' }}>
-                  Бештар бидон
-                </button>
-              </Link>
-            </div>
-
-            {/* Mini stat cards */}
-            <div className="grid grid-cols-3 gap-3.5 max-w-md">
-              <div className="glass-card-light p-4">
-                <BookOpen size={20} style={{ color: '#6D4FF0', marginBottom: 8 }} />
-                <p className="font-sora font-bold text-xl" style={{ color: '#1A1532' }}>{lessons}+</p>
-                <p className="text-xs" style={{ color: '#8A82AD' }}>Дарсҳо</p>
-              </div>
-              <div className="glass-card-light p-4">
-                <Layers size={20} style={{ color: '#FF5C8A', marginBottom: 8 }} />
-                <p className="font-sora font-bold text-xl" style={{ color: '#1A1532' }}>3</p>
-                <p className="text-xs" style={{ color: '#8A82AD' }}>Сатҳ</p>
-              </div>
-              <div className="glass-card-light p-4">
-                <Sparkles size={20} style={{ color: '#6D4FF0', marginBottom: 8 }} />
-                <p className="font-sora font-bold text-xl" style={{ color: '#1A1532' }}>AI</p>
-                <p className="text-xs" style={{ color: '#8A82AD' }}>Ёрдамчӣ</p>
-              </div>
-            </div>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 480 }}>
+          <div className="fade-up-1" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'rgba(45,212,191,0.08)',
+            border: '1px solid rgba(45,212,191,0.25)',
+            borderRadius: 6,
+            padding: '6px 14px',
+            marginBottom: 26,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block' }}></span>
+            <span style={{ color: '#5EEAD4', fontSize: 12, fontWeight: 500, letterSpacing: '0.03em' }}>AI-PLATFORMAI OMUZISHI ZABON</span>
           </div>
 
-          {/* Right: video + decorative elements */}
-          <div className="relative flex justify-center">
-            {/* Floating brain icon */}
-            <div className="float-1" style={{ position: 'absolute', top: -20, right: 20, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(109,79,240,0.12), rgba(255,92,138,0.12))', border: '1px solid rgba(109,79,240,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-              <Brain size={24} style={{ color: '#6D4FF0' }} />
-            </div>
-            {/* Floating gem badge */}
-            <div className="float-2" style={{ position: 'absolute', top: 40, left: 10, width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,92,138,0.15), rgba(109,79,240,0.1))', border: '1px solid rgba(255,92,138,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-              <Gem size={20} style={{ color: '#FF5C8A' }} />
-            </div>
-            {/* Pulse dot */}
-            <div style={{ position: 'absolute', bottom: 40, left: 0, width: 14, height: 14, zIndex: 2 }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#FF5C8A' }} className="pulse-dot" />
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#FF5C8A' }} />
-            </div>
-            {/* Flame badge */}
-            <div className="float-1" style={{ position: 'absolute', bottom: 60, right: 0, width: 44, height: 44, borderRadius: 12, background: 'rgba(255,92,138,0.1)', border: '1px solid rgba(255,92,138,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-              <Flame size={20} style={{ color: '#FF5C8A' }} />
-            </div>
+          <h1 className="fade-up-2" style={{
+            color: 'white',
+            fontSize: 44,
+            fontWeight: 500,
+            lineHeight: 1.22,
+            letterSpacing: '-0.015em',
+            margin: '0 0 20px',
+          }}>
+            Забони англисиро бо{' '}
+            <span style={{ fontWeight: 600, color: '#2DD4BF' }}>зеҳни сунъӣ</span>{' '}
+            омӯз
+          </h1>
+          <p className="fade-up-2" style={{
+            color: 'rgba(255,255,255,0.55)',
+            fontSize: 16,
+            lineHeight: 1.65,
+            margin: '0 0 36px',
+            maxWidth: 400,
+          }}>
+            Дарси шахсишуда, тести оқилона ва ёрдамчии AI, ки ҳамеша дар канори туст
+          </p>
 
-            {/* Video */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{ maxWidth: '320px', width: '100%', borderRadius: 24, boxShadow: '0 20px 60px rgba(109,79,240,0.2)', position: 'relative', zIndex: 1 }}
-            >
-              <source src="/videos/fon.mp4" type="video/mp4" />
-            </video>
+          <div className="fade-up-3" style={{ display: 'flex', gap: 14, marginBottom: '3rem', flexWrap: 'wrap' }}>
+            <Link to="/register">
+              <button style={{
+                background: '#14B8A6',
+                color: '#04231F',
+                border: 'none',
+                borderRadius: 6,
+                padding: '13px 28px',
+                fontSize: 14,
+                fontWeight: 600,
+                boxShadow: '0 8px 24px rgba(20,184,166,0.3)',
+                cursor: 'pointer',
+              }}>Оғоз кардан</button>
+            </Link>
+            <Link to="/login">
+              <button style={{
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 6,
+                padding: '13px 28px',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}>Бештар бидон</button>
+            </Link>
+          </div>
+
+          <div className="fade-up-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, maxWidth: 460 }}>
+            <div className="glass-card" style={{ padding: 16 }}>
+              <BookOpen size={18} color="#2DD4BF" style={{ marginBottom: 10, display: 'block' }} />
+              <p style={{ color: 'white', fontSize: 20, fontWeight: 500, margin: '0 0 1px' }}>28+</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>Дарсҳо</p>
+            </div>
+            <div className="glass-card" style={{ padding: 16 }}>
+              <Layers size={18} color="#FBBF24" style={{ marginBottom: 10, display: 'block' }} />
+              <p style={{ color: 'white', fontSize: 20, fontWeight: 500, margin: '0 0 1px' }}>3</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>Сатҳ</p>
+            </div>
+            <div className="glass-card" style={{ padding: 16 }}>
+              <Sparkles size={18} color="#2DD4BF" style={{ marginBottom: 10, display: 'block' }} />
+              <p style={{ color: 'white', fontSize: 20, fontWeight: 500, margin: '0 0 1px' }}>AI</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>Ёрдамчӣ</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Stats bar */}
-      <div className="border-y py-7" style={{ borderColor: 'rgba(109,79,240,0.1)', background: 'white' }}>
+      <div className="border-y py-7" style={{ borderColor: 'rgba(45,212,191,0.15)', background: 'rgba(10,42,46,0.8)' }}>
         <div className="max-w-4xl mx-auto px-6 flex flex-wrap items-center justify-center gap-10 text-center">
           <div>
-            <p className="text-2xl font-bold font-sora" style={{ color: '#1A1532' }}>{learners}+</p>
-            <p className="text-xs mt-0.5" style={{ color: '#8A82AD' }}>Омӯзандагон / Learners</p>
+            <p className="text-2xl font-bold" style={{ color: 'white' }}>{learners}+</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Омӯзандагон / Learners</p>
           </div>
-          <div className="w-px h-8 hidden sm:block" style={{ background: 'rgba(109,79,240,0.15)' }} />
+          <div className="w-px h-8 hidden sm:block" style={{ background: 'rgba(45,212,191,0.2)' }} />
           <div>
-            <p className="text-2xl font-bold font-sora" style={{ color: '#1A1532' }}>{lessons}+</p>
-            <p className="text-xs mt-0.5" style={{ color: '#8A82AD' }}>Дарсҳо / Lessons</p>
+            <p className="text-2xl font-bold" style={{ color: 'white' }}>{lessons}+</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Дарсҳо / Lessons</p>
           </div>
-          <div className="w-px h-8 hidden sm:block" style={{ background: 'rgba(109,79,240,0.15)' }} />
+          <div className="w-px h-8 hidden sm:block" style={{ background: 'rgba(45,212,191,0.2)' }} />
           <div>
-            <p className="text-2xl font-bold font-sora" style={{ color: '#1A1532' }}>4</p>
-            <p className="text-xs mt-0.5" style={{ color: '#8A82AD' }}>AI хусусиятҳо / AI features</p>
+            <p className="text-2xl font-bold" style={{ color: 'white' }}>4</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>AI хусусиятҳо / AI features</p>
           </div>
         </div>
       </div>
 
       {/* Features */}
       <div className="max-w-5xl mx-auto px-6 sm:px-10 py-20">
-        <h2 className="text-2xl font-extrabold font-sora mb-1 text-center" style={{ color: '#1A1532' }}>Чаро ZaboniAI?</h2>
-        <p className="text-sm text-center mb-12" style={{ color: '#8A82AD' }}>Why choose us</p>
+        <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: 'white' }}>Чаро ZaboniAI?</h2>
+        <p className="text-sm text-center mb-12" style={{ color: 'rgba(255,255,255,0.4)' }}>Why choose us</p>
         <div className="grid sm:grid-cols-3 gap-5">
           {FEATURES.map((f) => (
-            <div key={f.title} className="glass-card-light p-6">
-              <f.Icon size={24} style={{ color: f.color, marginBottom: 12 }} />
-              <h3 className="font-bold font-sora mb-0.5" style={{ color: '#1A1532' }}>{f.title}</h3>
-              <p className="text-xs mb-3" style={{ color: '#8A82AD' }}>{f.sub}</p>
-              <p className="text-sm leading-relaxed" style={{ color: '#6B6488' }}>{f.desc}</p>
+            <div key={f.title} className="glass-card" style={{ padding: 24 }}>
+              <f.Icon size={24} style={{ color: f.color, marginBottom: 12, display: 'block' }} />
+              <h3 className="font-semibold mb-0.5" style={{ color: 'white', fontWeight: 600 }}>{f.title}</h3>
+              <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>{f.sub}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -187,25 +234,35 @@ export default function LandingPage() {
 
       {/* Testimonials */}
       <div className="max-w-5xl mx-auto px-6 sm:px-10 pb-24">
-        <h2 className="text-2xl font-extrabold font-sora mb-1 text-center" style={{ color: '#1A1532' }}>Отзывы учеников</h2>
-        <p className="text-sm text-center mb-12" style={{ color: '#8A82AD' }}>What learners say</p>
+        <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: 'white' }}>Отзывы учеников</h2>
+        <p className="text-sm text-center mb-12" style={{ color: 'rgba(255,255,255,0.4)' }}>What learners say</p>
         <div className="grid sm:grid-cols-3 gap-5">
           {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="glass-card-light p-6">
+            <div key={t.name} className="glass-card" style={{ padding: 24 }}>
               <div className="flex gap-0.5 mb-3">
                 {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-sm" style={{ color: '#6D4FF0' }}>★</span>
+                  <span key={i} className="text-sm" style={{ color: '#2DD4BF' }}>★</span>
                 ))}
               </div>
-              <p className="text-sm leading-relaxed mb-4" style={{ color: '#6B6488' }}>"{t.text}"</p>
-              <p className="text-xs font-semibold" style={{ color: '#6D4FF0' }}>{t.name}</p>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgba(255,255,255,0.6)' }}>"{t.text}"</p>
+              <p className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>{t.name}</p>
             </div>
           ))}
         </div>
 
         <div className="mt-16 text-center">
           <Link to="/register">
-            <button className="rounded-xl px-10 py-4 font-semibold text-base text-white" style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)', boxShadow: '0 8px 24px rgba(109,79,240,0.3)' }}>
+            <button style={{
+              borderRadius: 6,
+              padding: '14px 40px',
+              fontWeight: 600,
+              fontSize: 15,
+              color: '#04231F',
+              background: '#14B8A6',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(20,184,166,0.3)',
+              cursor: 'pointer',
+            }}>
               Оғоз кардан — бепул / Start Free →
             </button>
           </Link>

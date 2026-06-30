@@ -4,36 +4,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: {
-          DEFAULT: "#1e3a5f",
-          dark: "#152a45",
-          light: "#2d5580",
-        },
-        gold: {
-          DEFAULT: "#f0a500",
-          light: "#ffc233",
-          dark: "#c98700",
-        },
-        primary: {
-          DEFAULT: "#6D4FF0",
-          dark: "#4730B0",
-          light: "#9B7AFF",
-        },
-        accent: {
-          DEFAULT: "#FF5C8A",
-          dark: "#C7396A",
-        },
-        surface: "#F4F1FF",
-        ink: "#1A1532",
+        primary: { DEFAULT: '#14B8A6', light: '#2DD4BF', dark: '#0D9488' },
+        accent: { DEFAULT: '#FBBF24', dark: '#D97706' },
+        bg: { DEFAULT: '#061A1C', mid: '#0A2A2E', light: '#0E3A3F' },
+        surface: 'rgba(255,255,255,0.04)',
+      },
+      borderRadius: {
+        DEFAULT: '6px',
       },
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+        sans: ["Inter", "Plus Jakarta Sans", "system-ui", "sans-serif"],
         sora: ["Sora", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 10px 30px -10px rgba(30, 58, 95, 0.25)",
-        card: "0 4px 20px rgba(30, 58, 95, 0.08)",
-        glow: "0 0 30px rgba(109, 79, 240, 0.35)",
+        soft: "0 10px 30px -10px rgba(6,26,28,0.4)",
+        card: "0 4px 20px rgba(6,26,28,0.15)",
+        glow: "0 0 30px rgba(20,184,166,0.35)",
       },
       animation: {
         "fade-in": "fadeIn 0.4s ease-out",
