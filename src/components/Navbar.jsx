@@ -2,32 +2,21 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag } from "lucide-react";
 import api from "../api/axios";
-import { LANGUAGES, getLang, setLang } from "../utils/lang";
-import { useTranslation } from "../i18n/useTranslation";
 import { avatarUrl } from "../utils/avatar";
 
 const links = [
-  { to: "/courses", label: "Courses", sub: "Курсы", Icon: BookOpen, key: "courses" },
-  { to: "/game", label: "Game", sub: "Игра", Icon: Gamepad2 },
-  { to: "/practice", label: "Practice", sub: "Практика", Icon: Puzzle, key: "practice" },
-  { to: "/daily", label: "Daily", sub: "Вызов дня", Icon: Zap },
-  { to: "/progress", label: "Progress", sub: "Прогресс", Icon: BarChart2, key: "progress" },
-  { to: "/ai", label: "AI Chat", sub: "AI Чат", Icon: Sparkles, key: "aiChat" },
-  { to: "/shop", label: "Shop", sub: "Магазин", Icon: ShoppingBag, key: "shop" },
-];
-
-const UI_LANGUAGES = [
-  { code: "ru", flag: "🇷🇺", label: "RU" },
-  { code: "tj", flag: "🇹🇯", label: "TJ" },
-  { code: "en", flag: "🇬🇧", label: "EN" },
+  { to: "/courses", label: "Курсҳо", Icon: BookOpen },
+  { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
+  { to: "/practice", label: "Машқ", Icon: Puzzle },
+  { to: "/daily", label: "Рӯзона", Icon: Zap },
+  { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
+  { to: "/ai", label: "ИИ Чат", Icon: Sparkles },
+  { to: "/shop", label: "Мағоза", Icon: ShoppingBag },
 ];
 
 export default function Navbar() {
-  const { t, lang: uiLang, changeLang } = useTranslation();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState(getLang());
   const [coins, setCoins] = useState(Number(localStorage.getItem("coins") || 0));
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,13 +24,7 @@ export default function Navbar() {
   useEffect(() => {
     api
       .get("/profile/me")
-      .then((res) => {
-        setUser(res.data);
-        if (res.data.selected_language) {
-          setCurrentLang(res.data.selected_language);
-          setLang(res.data.selected_language);
-        }
-      })
+      .then((res) => setUser(res.data))
       .catch(() => setUser(null));
 
     api
@@ -62,20 +45,11 @@ export default function Navbar() {
     navigate("/login");
   }
 
-  function handleLangChange(code) {
-    setCurrentLang(code);
-    setLang(code);
-    setLangOpen(false);
-    api.put("/profile/update", { selected_language: code }).catch(() => {});
-  }
-
-  const activeLang = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
-
   return (
     <header
       className="sticky top-0 z-40"
       style={{
-        background: 'rgba(9,20,24,0.7)',
+        background: 'rgba(9,20,24,0.6)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(45,212,191,0.15)',
@@ -110,7 +84,7 @@ export default function Navbar() {
                   : "hover:-translate-y-0.5"
               }`}
               style={location.pathname.startsWith(l.to)
-                ? { background: 'rgba(45,212,191,0.12)', color: '#2DD4BF' }
+                ? { background: 'rgba(45,212,191,0.12)', color: '#2DD4BF', borderBottom: '2px solid #2DD4BF' }
                 : { color: 'rgba(255,255,255,0.6)' }
               }
               onMouseEnter={(e) => {
@@ -127,63 +101,12 @@ export default function Navbar() {
               }}
             >
               <l.Icon size={14} />
-              {l.key ? t(l.key) : l.label}
+              {l.label}
             </Link>
           ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            {UI_LANGUAGES.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => changeLang(l.code)}
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-all duration-150 border"
-                style={uiLang === l.code
-                  ? { borderColor: 'rgba(45,212,191,0.35)', background: 'rgba(45,212,191,0.1)', color: '#2DD4BF' }
-                  : { borderColor: 'transparent', color: 'rgba(255,255,255,0.45)' }
-                }
-              >
-                <span>{l.flag}</span> {l.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setLangOpen((v) => !v)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-sm font-semibold transition-colors duration-150"
-              style={{ background: 'rgba(45,212,191,0.08)', color: 'rgba(255,255,255,0.8)' }}
-            >
-              <span>{activeLang.flag}</span>
-              <span>{activeLang.label}</span>
-            </button>
-            {langOpen && (
-              <div
-                className="absolute right-0 mt-2 rounded py-1.5 w-32 z-50 animate-fade-in"
-                style={{
-                  background: '#0A2A2E',
-                  border: '1px solid rgba(45,212,191,0.2)',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                }}
-              >
-                {LANGUAGES.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => handleLangChange(l.code)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors duration-150"
-                    style={l.code === currentLang
-                      ? { background: 'rgba(45,212,191,0.1)', color: '#2DD4BF', fontWeight: 600 }
-                      : { color: 'rgba(255,255,255,0.55)' }
-                    }
-                  >
-                    <span>{l.flag}</span> {l.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {user && (
             <Link to="/profile" className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded font-semibold text-sm" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
@@ -208,7 +131,7 @@ export default function Navbar() {
             onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
           >
-            {t("logout")}
+            Баромадан
           </button>
         </div>
 
@@ -216,7 +139,7 @@ export default function Navbar() {
           className="md:hidden p-2"
           style={{ color: 'rgba(255,255,255,0.8)' }}
           onClick={() => setMenuOpen(true)}
-          aria-label="Menu"
+          aria-label="Меню"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
@@ -271,30 +194,14 @@ export default function Navbar() {
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'white' }}>{user.full_name}</p>
                 <p className="text-xs font-semibold flex items-center gap-1" style={{ color: '#FBBF24' }}>
-                  <Flame size={12} /> {user.streak} day streak
+                  <Flame size={12} /> {user.streak} рӯзи пайдарпай
                 </p>
                 <p className="text-xs font-semibold flex items-center gap-1" style={{ color: '#2DD4BF' }}>
-                  <Gem size={12} /> {coins} coins
+                  <Gem size={12} /> {coins} тангаҳо
                 </p>
               </div>
             </Link>
           )}
-
-          <div className="flex items-center gap-1.5 px-5 py-3" style={{ borderBottom: '1px solid rgba(45,212,191,0.12)' }}>
-            {UI_LANGUAGES.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => changeLang(l.code)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold transition-all duration-150 border"
-                style={uiLang === l.code
-                  ? { borderColor: 'rgba(45,212,191,0.35)', background: 'rgba(45,212,191,0.1)', color: '#2DD4BF' }
-                  : { borderColor: 'transparent', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)' }
-                }
-              >
-                {l.flag} {l.label}
-              </button>
-            ))}
-          </div>
 
           <nav className="flex-1 px-3 py-3 space-y-1">
             {links.map((l) => (
@@ -308,7 +215,7 @@ export default function Navbar() {
                 }
               >
                 <l.Icon size={18} />
-                <span>{l.key ? t(l.key) : l.label}</span>
+                <span>{l.label}</span>
               </Link>
             ))}
           </nav>
@@ -319,7 +226,7 @@ export default function Navbar() {
               className="w-full text-left px-3 py-3 rounded font-medium transition-colors duration-150"
               style={{ color: 'rgba(45,212,191,0.7)' }}
             >
-              {t("logout")}
+              Баромадан
             </button>
           </div>
         </div>
