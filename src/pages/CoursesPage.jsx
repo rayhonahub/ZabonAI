@@ -86,22 +86,22 @@ function ModuleRow({ courseId, mod, lessons, statusMap }) {
   const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <div className="border border-slate-100 rounded-xl overflow-hidden">
+    <div className="border border-white/10 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors duration-150"
+        className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors duration-150"
       >
         <div className="flex-1 text-left">
-          <span className="text-sm font-semibold text-navy block">{mod.title}</span>
+          <span className="text-sm font-semibold text-white block">{mod.title}</span>
           {total > 0 && (
             <div className="mt-1.5 flex items-center gap-2">
-              <div className="h-1.5 flex-1 max-w-[140px] bg-slate-200 rounded-full overflow-hidden">
+              <div className="h-1.5 flex-1 max-w-[140px] bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gold rounded-full transition-all duration-300"
+                  className="h-full bg-primary rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-white/40">
                 {completedCount}/{total} lessons completed
               </span>
             </div>
@@ -110,9 +110,9 @@ function ModuleRow({ courseId, mod, lessons, statusMap }) {
         <ChevronIcon open={open} />
       </button>
       {open && (
-        <div className="px-4 py-3 bg-white animate-fade-in space-y-1.5">
+        <div className="px-4 py-3 bg-black/10 animate-fade-in space-y-1.5">
           {lessons.length === 0 && (
-            <p className="text-xs text-slate-400 py-2">No lessons yet / Уроков пока нет</p>
+            <p className="text-xs text-white/40 py-2">No lessons yet / Уроков пока нет</p>
           )}
           {lessons.map((lesson) => (
             <LessonRow
@@ -200,30 +200,30 @@ export default function CoursesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ink page-enter">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <div className="mb-10 animate-fade-in">
-          <h1 className="text-3xl font-extrabold text-navy">
+          <h1 className="text-3xl font-extrabold text-white">
             Welcome back{user ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-white/50 mt-1">
             С возвращением! Keep your streak going{" "}
             {user && (
-              <span className="inline-flex items-center gap-1 font-semibold text-gold-dark">
+              <span className="inline-flex items-center gap-1 font-semibold text-gold">
                 🔥 {user.streak} {user.streak === 1 ? "day" : "days"}
               </span>
             )}
           </p>
         </div>
 
-        <h2 className="text-lg font-bold text-navy mb-4">{t("your_courses")}</h2>
+        <h2 className="text-lg font-bold text-white/80 mb-4">{t("your_courses")}</h2>
 
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 bg-white rounded-2xl shadow-card animate-pulse" />
+              <div key={i} className="h-44 bg-white/10 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : (
@@ -232,32 +232,32 @@ export default function CoursesPage() {
               <div key={course.id} className="flex flex-col gap-3">
                 <button
                   onClick={() => openCourse(course)}
-                  className={`text-left bg-white rounded-2xl shadow-card p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-soft border-2 ${
-                    activeCourse?.id === course.id ? "border-gold" : "border-transparent"
+                  className={`text-left glass-card p-6 transition-all duration-200 border-2 ${
+                    activeCourse?.id === course.id ? "border-primary/60" : "border-transparent"
                   }`}
                 >
                   <span
                     className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${
-                      levelStyles[course.level] || "bg-slate-100 text-slate-600"
+                      levelStyles[course.level] || "bg-white/10 text-white/70"
                     }`}
                   >
                     {t("level")}: {t(course.level)}
                   </span>
-                  <h3 className="text-lg font-bold text-navy mb-1.5">{course.title}</h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">{course.description}</p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-navy">
+                  <h3 className="text-lg font-bold text-white mb-1.5">{course.title}</h3>
+                  <p className="text-sm text-white/55 line-clamp-2">{course.description}</p>
+                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-primary-light">
                     {activeCourse?.id === course.id ? "Hide modules" : "View modules"}
                     <ChevronIcon open={activeCourse?.id === course.id} />
                   </div>
                 </button>
 
                 {activeCourse?.id === course.id && (
-                  <div className="bg-white rounded-2xl shadow-card p-4 space-y-2 animate-slide-up">
+                  <div className="glass-card p-4 space-y-2 animate-slide-up">
                     {modulesLoading && (
-                      <p className="text-xs text-slate-400 px-2 py-1">Loading...</p>
+                      <p className="text-xs text-white/40 px-2 py-1">Loading...</p>
                     )}
                     {!modulesLoading && modules.length === 0 && (
-                      <p className="text-xs text-slate-400 px-2 py-1">
+                      <p className="text-xs text-white/40 px-2 py-1">
                         No modules yet / Пока нет модулей
                       </p>
                     )}
@@ -279,7 +279,7 @@ export default function CoursesPage() {
         )}
 
         {!loading && courses.length === 0 && (
-          <div className="text-center py-20 text-slate-400">
+          <div className="text-center py-20 text-white/40">
             No courses available yet / Пока нет курсов
           </div>
         )}

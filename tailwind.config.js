@@ -14,13 +14,25 @@ export default {
           light: "#ffc233",
           dark: "#c98700",
         },
+        primary: {
+          DEFAULT: "#6D4FF0",
+          dark: "#4730B0",
+          light: "#9B82FF",
+        },
+        accent: {
+          DEFAULT: "#FF5C8A",
+          dark: "#C7396A",
+        },
+        ink: "#0F0C28",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+        sora: ["Sora", "sans-serif"],
       },
       boxShadow: {
         soft: "0 10px 30px -10px rgba(30, 58, 95, 0.25)",
         card: "0 4px 20px rgba(30, 58, 95, 0.08)",
+        glow: "0 0 30px rgba(109, 79, 240, 0.35)",
       },
       animation: {
         "fade-in": "fadeIn 0.4s ease-out",
@@ -28,6 +40,7 @@ export default {
         "pop": "pop 0.25s ease-out",
         "typing": "typing 1.2s infinite",
         "float": "float 3s ease-in-out infinite",
+        "slide-up-fade": "slideUpFade 0.35s ease-out",
       },
       keyframes: {
         fadeIn: {
@@ -36,6 +49,10 @@ export default {
         },
         slideUp: {
           "0%": { opacity: 0, transform: "translateY(12px)" },
+          "100%": { opacity: 1, transform: "translateY(0)" },
+        },
+        slideUpFade: {
+          "0%": { opacity: 0, transform: "translateY(8px)" },
           "100%": { opacity: 1, transform: "translateY(0)" },
         },
         pop: {

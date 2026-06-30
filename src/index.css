@@ -1,3 +1,5 @@
+@import './styles/backgrounds.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,13 +10,19 @@ html {
 
 html,
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background-color: #f5f7fa;
-  color: #1e293b;
+  background-color: #0F0C28;
+  color: #e2e8f0;
+}
+
+h1, h2, h3 {
+  font-family: "Sora", "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 ::-webkit-scrollbar {
@@ -22,13 +30,17 @@ body {
   height: 8px;
 }
 
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+}
+
 ::-webkit-scrollbar-thumb {
-  background: #c7d2e0;
+  background: rgba(255,255,255,0.15);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #aebcd1;
+  background: rgba(255,255,255,0.25);
 }
 
 .bg-grain {
@@ -39,7 +51,25 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
   background-size: 22px 22px;
   pointer-events: none;
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: pageEnter 0.4s ease-out;
+}
+
+@keyframes animateSlideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: animateSlideIn 0.3s ease-out;
 }

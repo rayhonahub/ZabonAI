@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Flame, Gem } from "lucide-react";
 import api from "../api/axios";
 import { LANGUAGES, getLang, setLang } from "../utils/lang";
 import { useTranslation } from "../i18n/useTranslation";
@@ -72,7 +73,7 @@ export default function Navbar() {
   const activeLang = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
   return (
-    <header className="sticky top-0 z-40 bg-navy/95 backdrop-blur text-white shadow-soft">
+    <header className="sticky top-0 z-40 glass-nav text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/courses" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
           <Logo size="small" />
@@ -140,11 +141,11 @@ export default function Navbar() {
 
           {user && (
             <Link to="/profile" className="flex items-center gap-2">
-              <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
-                🔥 {user.streak}
+              <span className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
+                <Flame size={14} className="text-accent" /> {user.streak}
               </span>
-              <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
-                💎 {coins}
+              <span className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-primary-light font-semibold text-sm">
+                <Gem size={14} className="text-primary-light" /> {coins}
               </span>
               <img
                 src={avatarUrl(user.avatar_style, user.avatar_seed)}
@@ -212,8 +213,8 @@ export default function Navbar() {
               />
               <div>
                 <p className="text-white font-semibold text-sm">{user.full_name}</p>
-                <p className="text-gold-light text-xs font-semibold">🔥 {user.streak} day streak</p>
-                <p className="text-gold-light text-xs font-semibold">💎 {coins} coins</p>
+                <p className="text-gold-light text-xs font-semibold flex items-center gap-1"><Flame size={12} className="text-accent" /> {user.streak} day streak</p>
+                <p className="text-primary-light text-xs font-semibold flex items-center gap-1"><Gem size={12} className="text-primary-light" /> {coins} coins</p>
               </div>
             </Link>
           )}

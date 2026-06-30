@@ -1,37 +1,30 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { BookOpen, Layers, Sparkles, Brain, Camera } from "lucide-react";
 import { useCountUp } from "../hooks/useCountUp";
-import { useTranslation } from "../i18n/useTranslation";
-import Logo from "../components/Logo";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const FEATURES = [
   {
-    emoji: "🤖",
+    Icon: Sparkles,
+    color: "text-primary-light",
     title: "AI Tutor",
     sub: "AI Репетитор",
-    ru: "Объясняет на русском и таджикском",
-    en: "Explains every mistake in simple terms",
+    desc: "Объясняет на русском и таджикском языках",
   },
   {
-    emoji: "📝",
+    Icon: Brain,
+    color: "text-accent",
     title: "Smart Quiz",
     sub: "Умный тест",
-    ru: "Тесты после каждого урока",
-    en: "A quick quiz after every lesson",
+    desc: "Тест после каждого урока — учись умнее",
   },
   {
-    emoji: "📸",
+    Icon: Camera,
+    color: "text-primary-light",
     title: "Screenshot Help",
     sub: "Помощь по скриншоту",
-    ru: "Загрузи скриншот — AI объяснит",
-    en: "Upload a screenshot, AI explains it",
+    desc: "Загрузи скриншот — AI объяснит всё",
   },
-];
-
-const STEPS = [
-  { emoji: "1️⃣", title: "Choose your level", sub: "Выбери свой уровень" },
-  { emoji: "2️⃣", title: "Study lessons with AI help", sub: "Изучай уроки с помощью AI" },
-  { emoji: "3️⃣", title: "Practice with games and quizzes", sub: "Практикуйся с играми и тестами" },
 ];
 
 const TESTIMONIALS = [
@@ -45,203 +38,144 @@ const TESTIMONIALS = [
   },
   {
     name: "Нилуфар, Бухара",
-    text: "Игра «Word Match» и ежедневный вызов делают учёбу похожей на игру, а не на домашку.",
+    text: "Word Match и ежедневный вызов делают учёбу похожей на игру, а не на домашку.",
   },
 ];
 
-function useTypewriterCycle(words, { typeSpeed = 60, deleteSpeed = 30, pause = 1800 } = {}) {
-  const [wordIndex, setWordIndex] = useState(0);
-  const [text, setText] = useState("");
-  const [phase, setPhase] = useState("typing");
-
-  useEffect(() => {
-    const current = words[wordIndex];
-    let timeout;
-
-    if (phase === "typing") {
-      if (text.length < current.length) {
-        timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), typeSpeed);
-      } else {
-        timeout = setTimeout(() => setPhase("deleting"), pause);
-      }
-    } else {
-      if (text.length > 0) {
-        timeout = setTimeout(() => setText(text.slice(0, -1)), deleteSpeed);
-      } else {
-        setWordIndex((i) => (i + 1) % words.length);
-        setPhase("typing");
-      }
-    }
-
-    return () => clearTimeout(timeout);
-  }, [text, phase, wordIndex, words, typeSpeed, deleteSpeed, pause]);
-
-  return text;
-}
-
-function DemoMockup() {
-  return (
-    <div className="bg-white rounded-2xl shadow-soft overflow-hidden max-w-md mx-auto">
-      <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-100">
-        <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-        <span className="ml-3 text-xs text-slate-400 font-medium">ZaboniAI — AI Tutor demo</span>
-      </div>
-      <div className="p-5 space-y-3 text-left">
-        <div className="flex justify-end">
-          <div className="bg-blue-600 text-white text-sm rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[75%] animate-fade-in">
-            How do I use "used to"?
-          </div>
-        </div>
-        <div className="flex justify-start">
-          <div
-            className="bg-blue-50 border border-blue-200 text-slate-700 text-sm rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[80%] animate-fade-in"
-            style={{ animationDelay: "0.4s" }}
-          >
-            "Used to" talks about past habits that are finished. <br />
-            Example: <strong>I used to play football.</strong> ⚽
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <div
-            className="bg-blue-600 text-white text-sm rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[75%] animate-fade-in"
-            style={{ animationDelay: "0.8s" }}
-          >
-            Спасибо! Теперь понятно 🙌
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function LandingPage() {
-  const { t } = useTranslation();
-  const tagline = useTypewriterCycle([t("hero_title")]);
+  usePageTitle("ZaboniAI — Learn English with AI");
   const learners = useCountUp(500, 1400);
-  const lessons = useCountUp(30, 1400);
-  const aiFeatures = useCountUp(4, 1400);
+  const lessons = useCountUp(28, 1400);
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="flex items-center justify-between max-w-6xl mx-auto px-4 sm:px-6 py-5">
-        <span className="font-extrabold text-xl text-navy flex items-center gap-2">
-          <Logo size="small" /> ZaboniAI <span>🇹🇯</span>
-        </span>
-        <Link
-          to="/login"
-          className="text-sm font-semibold text-navy hover:text-gold transition-colors"
-        >
-          {t("login")}
+    <div className="bg-ink min-h-screen page-enter">
+
+      {/* Nav */}
+      <nav className="glass-nav sticky top-0 z-40 flex items-center justify-between px-6 sm:px-10 py-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+            <span className="font-sora font-extrabold text-primary text-sm">Z</span>
+          </div>
+          <span className="text-white font-sora font-semibold text-sm">ZaboniAI</span>
+        </div>
+        <div className="hidden sm:flex gap-7 text-white/60 text-sm">
+          <span>Курсҳо</span>
+          <span>Бозӣ</span>
+          <span>Мағоза</span>
+        </div>
+        <Link to="/login">
+          <button className="bg-primary text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-primary-dark transition-colors duration-200 shadow-lg shadow-primary/30">
+            Дохил шудан
+          </button>
         </Link>
-      </header>
+      </nav>
 
-      <section className="bg-gradient-to-br from-navy via-navy-dark to-[#0c1b2e] bg-grain">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
-          <div className="flex justify-center mb-6">
-            <Logo size="large" className="animate-float" />
+      {/* Hero */}
+      <div className="bg-hero min-h-[480px] sm:min-h-[560px] px-6 sm:px-10 py-16 sm:py-24">
+        <p className="text-primary-light text-xs tracking-widest uppercase mb-3 font-semibold">
+          AI-platformai omuzishi zabon
+        </p>
+        <h1 className="text-white text-4xl sm:text-5xl font-extrabold leading-tight mb-4 max-w-md font-sora">
+          Забони англисиро бо зеҳни сунъӣ омӯз
+        </h1>
+        <p className="text-white/65 text-base leading-relaxed mb-8 max-w-sm">
+          Дарси шахсишуда, тести оқилона ва ёрдамчии AI, ки ҳамеша дар канори туст
+        </p>
+
+        <div className="flex flex-wrap gap-3 mb-12">
+          <Link to="/register">
+            <button className="bg-primary text-white rounded-xl px-7 py-3.5 font-semibold hover:bg-primary-dark transition-all duration-200 shadow-lg shadow-primary/30 hover:-translate-y-0.5">
+              Оғоз кардан
+            </button>
+          </Link>
+          <Link to="/login">
+            <button className="glass-card text-white rounded-xl px-7 py-3.5 font-semibold">
+              Бештар бидон
+            </button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 sm:gap-3.5 max-w-md">
+          <div className="glass-card p-4">
+            <BookOpen size={20} className="text-primary-light mb-2" />
+            <p className="text-white text-xl font-bold font-sora">{lessons}+</p>
+            <p className="text-white/50 text-xs">Дарсҳо</p>
           </div>
-          <div className="flex justify-center gap-5 text-4xl mb-8">
-            <span className="animate-float inline-block" style={{ animationDelay: "0s" }}>
-              📖
-            </span>
-            <span className="animate-float inline-block" style={{ animationDelay: "0.3s" }}>
-              💬
-            </span>
-            <span className="animate-float inline-block" style={{ animationDelay: "0.6s" }}>
-              🎓
-            </span>
-            <span className="animate-float inline-block" style={{ animationDelay: "0.9s" }}>
-              ✨
-            </span>
+          <div className="glass-card p-4">
+            <Layers size={20} className="text-accent mb-2" />
+            <p className="text-white text-xl font-bold font-sora">3</p>
+            <p className="text-white/50 text-xs">Сатҳ</p>
           </div>
-
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-3 min-h-[1.3em]">
-            {tagline}
-            <span className="inline-block w-[3px] h-[1em] bg-gold ml-1 align-middle animate-typing" />
-          </h1>
-
-          <p className="text-white/70 text-base sm:text-lg mb-9">{t("hero_subtitle")}</p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Link
-              to="/register"
-              className="relative px-8 py-3.5 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-            >
-              <span className="absolute inset-0 rounded-xl bg-gold animate-ping opacity-20" />
-              <span className="relative">{t("start_learning")} →</span>
-            </Link>
-            <Link
-              to="/login"
-              className="text-white/80 hover:text-white text-sm font-medium underline-offset-4 hover:underline transition-colors"
-            >
-              {t("already_have_account")}
-            </Link>
-          </div>
-
-          <DemoMockup />
-
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-white/70 text-sm">
-            <span>
-              🎉 <strong className="text-white">{learners}+</strong> learners
-            </span>
-            <span>
-              📚 <strong className="text-white">{lessons}+</strong> lessons
-            </span>
-            <span>
-              ✨ <strong className="text-white">{aiFeatures}</strong> AI features
-            </span>
+          <div className="glass-card p-4">
+            <Sparkles size={20} className="text-primary-light mb-2" />
+            <p className="text-white text-xl font-bold font-sora">AI</p>
+            <p className="text-white/50 text-xs">Ёрдамчӣ</p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-        <h2 className="text-center text-2xl font-extrabold text-navy mb-1">How it works</h2>
-        <p className="text-center text-slate-400 mb-10">Как это работает</p>
-        <div className="grid sm:grid-cols-3 gap-6">
-          {STEPS.map((s) => (
-            <div key={s.title} className="text-center">
-              <div className="text-3xl mb-3">{s.emoji}</div>
-              <h3 className="font-bold text-navy mb-0.5">{s.title}</h3>
-              <p className="text-sm text-slate-500">{s.sub}</p>
-            </div>
-          ))}
+      {/* Stats bar */}
+      <div className="border-y border-white/8 py-7 bg-white/3">
+        <div className="max-w-4xl mx-auto px-6 flex flex-wrap items-center justify-center gap-10 text-center">
+          <div>
+            <p className="text-2xl font-bold text-white font-sora">{learners}+</p>
+            <p className="text-white/45 text-xs mt-0.5">Омӯзандагон / Learners</p>
+          </div>
+          <div className="w-px h-8 bg-white/15 hidden sm:block" />
+          <div>
+            <p className="text-2xl font-bold text-white font-sora">{lessons}+</p>
+            <p className="text-white/45 text-xs mt-0.5">Дарсҳо / Lessons</p>
+          </div>
+          <div className="w-px h-8 bg-white/15 hidden sm:block" />
+          <div>
+            <p className="text-2xl font-bold text-white font-sora">4</p>
+            <p className="text-white/45 text-xs mt-0.5">AI хусусиятҳо / AI features</p>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid sm:grid-cols-3 gap-6">
+      {/* Features */}
+      <div className="max-w-5xl mx-auto px-6 sm:px-10 py-20">
+        <h2 className="text-white text-2xl font-extrabold font-sora mb-1 text-center">Чаро ZaboniAI?</h2>
+        <p className="text-white/50 text-sm text-center mb-12">Why choose us</p>
+        <div className="grid sm:grid-cols-3 gap-5">
           {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="bg-white rounded-2xl shadow-card p-6 text-center border border-slate-100 hover:-translate-y-1 hover:shadow-soft transition-all duration-200"
-            >
-              <div className="text-4xl mb-3">{f.emoji}</div>
-              <h3 className="font-bold text-navy mb-0.5">{f.title}</h3>
-              <p className="text-xs text-slate-400 mb-3">{f.sub}</p>
-              <p className="text-sm text-slate-600">{f.ru}</p>
-              <p className="text-xs text-slate-400 mt-1">{f.en}</p>
+            <div key={f.title} className="glass-card p-6">
+              <f.Icon size={24} className={`${f.color} mb-3`} />
+              <h3 className="text-white font-bold font-sora mb-0.5">{f.title}</h3>
+              <p className="text-white/40 text-xs mb-3">{f.sub}</p>
+              <p className="text-white/70 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      <section className="bg-slate-50 py-16">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="text-center text-2xl font-extrabold text-navy mb-1">What learners say</h2>
-          <p className="text-center text-slate-400 mb-10">Отзывы учеников</p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-white rounded-2xl shadow-card p-6">
-                <p className="text-2xl mb-2">⭐⭐⭐⭐⭐</p>
-                <p className="text-sm text-slate-600 mb-4 leading-relaxed">"{t.text}"</p>
-                <p className="text-xs font-semibold text-navy">{t.name}</p>
+      {/* Testimonials */}
+      <div className="max-w-5xl mx-auto px-6 sm:px-10 pb-24">
+        <h2 className="text-white text-2xl font-extrabold font-sora mb-1 text-center">Отзывы учеников</h2>
+        <p className="text-white/50 text-sm text-center mb-12">What learners say</p>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.name} className="glass-card p-6">
+              <div className="flex gap-0.5 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-primary-light text-sm">★</span>
+                ))}
               </div>
-            ))}
-          </div>
+              <p className="text-white/70 text-sm leading-relaxed mb-4">"{t.text}"</p>
+              <p className="text-primary-light text-xs font-semibold">{t.name}</p>
+            </div>
+          ))}
         </div>
-      </section>
+
+        <div className="mt-16 text-center">
+          <Link to="/register">
+            <button className="bg-primary text-white rounded-xl px-10 py-4 font-semibold text-base hover:bg-primary-dark transition-all duration-200 shadow-glow hover:-translate-y-0.5">
+              Оғоз кардан — бепул / Start Free →
+            </button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
