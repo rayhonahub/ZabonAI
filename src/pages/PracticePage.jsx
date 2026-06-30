@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import { WORD_PAIRS, FILL_GAP_SENTENCES } from "../data/practiceWords";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const TABS = [
   { key: "match", label: "Word Match", sub: "Карточки" },
