@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle2, Lock, Flame } from "lucide-react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { useTranslation } from "../i18n/useTranslation";
@@ -31,20 +32,20 @@ function ChevronIcon({ open }) {
 function LessonStatusBadge({ status }) {
   if (status === "completed") {
     return (
-      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs flex-shrink-0">
-        ✅
+      <span className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0" style={{ background: '#10b981' }}>
+        <CheckCircle2 size={14} color="white" />
       </span>
     );
   }
   if (status === "locked") {
     return (
-      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 text-slate-500 text-xs flex-shrink-0">
-        🔒
+      <span className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0" style={{ background: 'rgba(109,79,240,0.1)' }}>
+        <Lock size={13} style={{ color: '#8A82AD' }} />
       </span>
     );
   }
   return (
-    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#6D4FF0' }} />
   );
 }
 
@@ -54,8 +55,8 @@ function LessonRow({ courseId, moduleId, lesson, status }) {
 
   const cardStyles = {
     completed: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
-    current: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100",
-    locked: "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed",
+    current: "bg-primary/5 border-primary/20 text-ink hover:bg-primary/10",
+    locked: "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed",
   };
 
   return (
@@ -73,7 +74,7 @@ function LessonRow({ courseId, moduleId, lesson, status }) {
     >
       <LessonStatusBadge status={status} />
       <span className="flex-1 text-left">{lesson.title}</span>
-      {status === "current" && <span className="text-xs font-semibold">Continue →</span>}
+      {status === "current" && <span className="text-xs font-semibold" style={{ color: '#6D4FF0' }}>Continue →</span>}
     </button>
   );
 }
@@ -86,33 +87,36 @@ function ModuleRow({ courseId, mod, lessons, statusMap }) {
   const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <div className="border border-white/10 rounded-xl overflow-hidden">
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(109,79,240,0.12)' }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors duration-150"
+        className="w-full flex items-center justify-between px-4 py-3 transition-colors duration-150"
+        style={{ background: 'rgba(109,79,240,0.04)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(109,79,240,0.08)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(109,79,240,0.04)'}
       >
         <div className="flex-1 text-left">
-          <span className="text-sm font-semibold text-white block">{mod.title}</span>
+          <span className="text-sm font-semibold block" style={{ color: '#1A1532' }}>{mod.title}</span>
           {total > 0 && (
             <div className="mt-1.5 flex items-center gap-2">
-              <div className="h-1.5 flex-1 max-w-[140px] bg-white/10 rounded-full overflow-hidden">
+              <div className="h-1.5 flex-1 max-w-[140px] rounded-full overflow-hidden" style={{ background: 'rgba(109,79,240,0.12)' }}>
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                  style={{ width: `${progressPct}%` }}
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${progressPct}%`, background: '#6D4FF0' }}
                 />
               </div>
-              <span className="text-xs text-white/40">
+              <span className="text-xs" style={{ color: '#8A82AD' }}>
                 {completedCount}/{total} lessons completed
               </span>
             </div>
           )}
         </div>
-        <ChevronIcon open={open} />
+        <span style={{ color: '#8A82AD' }}><ChevronIcon open={open} /></span>
       </button>
       {open && (
-        <div className="px-4 py-3 bg-black/10 animate-fade-in space-y-1.5">
+        <div className="px-4 py-3 animate-fade-in space-y-1.5" style={{ background: 'rgba(244,241,255,0.5)' }}>
           {lessons.length === 0 && (
-            <p className="text-xs text-white/40 py-2">No lessons yet / Уроков пока нет</p>
+            <p className="text-xs py-2" style={{ color: '#8A82AD' }}>No lessons yet / Уроков пока нет</p>
           )}
           {lessons.map((lesson) => (
             <LessonRow
@@ -186,7 +190,6 @@ export default function CoursesPage() {
     }
   }
 
-  // Flatten lessons across modules (in order) to compute lock/current/completed status
   const statusMap = {};
   const flatLessons = modules.flatMap((mod) => lessonsByModule[mod.id] || []);
   flatLessons.forEach((lesson, idx) => {
@@ -200,30 +203,30 @@ export default function CoursesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-ink page-enter">
+    <div className="min-h-screen page-enter" style={{ background: '#F4F1FF' }}>
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <div className="mb-10 animate-fade-in">
-          <h1 className="text-3xl font-extrabold text-white">
+          <h1 className="text-3xl font-extrabold" style={{ color: '#1A1532' }}>
             Welcome back{user ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
           </h1>
-          <p className="text-white/50 mt-1">
+          <p className="mt-1" style={{ color: '#8A82AD' }}>
             С возвращением! Keep your streak going{" "}
             {user && (
-              <span className="inline-flex items-center gap-1 font-semibold text-gold">
-                🔥 {user.streak} {user.streak === 1 ? "day" : "days"}
+              <span className="inline-flex items-center gap-1 font-semibold" style={{ color: '#6D4FF0' }}>
+                <Flame size={14} style={{ color: '#FF5C8A' }} /> {user.streak} {user.streak === 1 ? "day" : "days"}
               </span>
             )}
           </p>
         </div>
 
-        <h2 className="text-lg font-bold text-white/80 mb-4">{t("your_courses")}</h2>
+        <h2 className="text-lg font-bold mb-4" style={{ color: '#534A7A' }}>{t("your_courses")}</h2>
 
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 bg-white/10 rounded-2xl animate-pulse" />
+              <div key={i} className="h-44 rounded-2xl animate-pulse" style={{ background: 'rgba(109,79,240,0.08)' }} />
             ))}
           </div>
         ) : (
@@ -232,32 +235,33 @@ export default function CoursesPage() {
               <div key={course.id} className="flex flex-col gap-3">
                 <button
                   onClick={() => openCourse(course)}
-                  className={`text-left glass-card p-6 transition-all duration-200 border-2 ${
-                    activeCourse?.id === course.id ? "border-primary/60" : "border-transparent"
+                  className={`text-left glass-card-light p-6 transition-all duration-200 border-2 ${
+                    activeCourse?.id === course.id ? "!border-primary/40" : ""
                   }`}
+                  style={activeCourse?.id === course.id ? { borderColor: 'rgba(109,79,240,0.4)' } : {}}
                 >
                   <span
                     className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${
-                      levelStyles[course.level] || "bg-white/10 text-white/70"
+                      levelStyles[course.level] || "bg-primary/10 text-primary"
                     }`}
                   >
                     {t("level")}: {t(course.level)}
                   </span>
-                  <h3 className="text-lg font-bold text-white mb-1.5">{course.title}</h3>
-                  <p className="text-sm text-white/55 line-clamp-2">{course.description}</p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-primary-light">
+                  <h3 className="text-lg font-bold mb-1.5" style={{ color: '#1A1532' }}>{course.title}</h3>
+                  <p className="text-sm line-clamp-2" style={{ color: '#8A82AD' }}>{course.description}</p>
+                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold" style={{ color: '#6D4FF0' }}>
                     {activeCourse?.id === course.id ? "Hide modules" : "View modules"}
                     <ChevronIcon open={activeCourse?.id === course.id} />
                   </div>
                 </button>
 
                 {activeCourse?.id === course.id && (
-                  <div className="glass-card p-4 space-y-2 animate-slide-up">
+                  <div className="glass-card-light p-4 space-y-2 animate-slide-up">
                     {modulesLoading && (
-                      <p className="text-xs text-white/40 px-2 py-1">Loading...</p>
+                      <p className="text-xs px-2 py-1" style={{ color: '#8A82AD' }}>Loading...</p>
                     )}
                     {!modulesLoading && modules.length === 0 && (
-                      <p className="text-xs text-white/40 px-2 py-1">
+                      <p className="text-xs px-2 py-1" style={{ color: '#8A82AD' }}>
                         No modules yet / Пока нет модулей
                       </p>
                     )}
@@ -279,7 +283,7 @@ export default function CoursesPage() {
         )}
 
         {!loading && courses.length === 0 && (
-          <div className="text-center py-20 text-white/40">
+          <div className="text-center py-20" style={{ color: '#8A82AD' }}>
             No courses available yet / Пока нет курсов
           </div>
         )}

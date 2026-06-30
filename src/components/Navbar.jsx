@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem } from "lucide-react";
+import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag } from "lucide-react";
 import api from "../api/axios";
 import { LANGUAGES, getLang, setLang } from "../utils/lang";
 import { useTranslation } from "../i18n/useTranslation";
@@ -8,13 +8,13 @@ import { avatarUrl } from "../utils/avatar";
 import Logo from "./Logo";
 
 const links = [
-  { to: "/courses", label: "Courses", sub: "Курсы", icon: "📚", key: "courses" },
-  { to: "/game", label: "Game", sub: "Игра", icon: "🎮" },
-  { to: "/practice", label: "Practice", sub: "Практика", icon: "🧩", key: "practice" },
-  { to: "/daily", label: "Daily", sub: "Вызов дня", icon: "⚡" },
-  { to: "/progress", label: "Progress", sub: "Прогресс", icon: "📊", key: "progress" },
-  { to: "/ai", label: "AI Chat", sub: "AI Чат", icon: "🤖", key: "aiChat" },
-  { to: "/shop", label: "Shop", sub: "Магазин", icon: "🛒", key: "shop" },
+  { to: "/courses", label: "Courses", sub: "Курсы", Icon: BookOpen, key: "courses" },
+  { to: "/game", label: "Game", sub: "Игра", Icon: Gamepad2 },
+  { to: "/practice", label: "Practice", sub: "Практика", Icon: Puzzle, key: "practice" },
+  { to: "/daily", label: "Daily", sub: "Вызов дня", Icon: Zap },
+  { to: "/progress", label: "Progress", sub: "Прогресс", Icon: BarChart2, key: "progress" },
+  { to: "/ai", label: "AI Chat", sub: "AI Чат", Icon: Sparkles, key: "aiChat" },
+  { to: "/shop", label: "Shop", sub: "Магазин", Icon: ShoppingBag, key: "shop" },
 ];
 
 const UI_LANGUAGES = [
@@ -73,11 +73,11 @@ export default function Navbar() {
   const activeLang = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
   return (
-    <header className="sticky top-0 z-40 glass-nav text-white">
+    <header className="sticky top-0 z-40 glass-nav" style={{ color: '#1A1532' }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/courses" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
           <Logo size="small" />
-          <span className="bg-gradient-to-r from-gold-light to-gold bg-clip-text text-transparent">ZaboniAI</span>
+          <span className="font-sora font-bold text-sm" style={{ color: '#1A1532' }}>ZaboniAI</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -87,11 +87,27 @@ export default function Navbar() {
               to={l.to}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 location.pathname.startsWith(l.to)
-                  ? "bg-gold text-navy-dark shadow-sm"
-                  : "text-white/80 hover:text-white hover:bg-white/10 hover:-translate-y-0.5"
+                  ? "shadow-sm"
+                  : "hover:-translate-y-0.5"
               }`}
+              style={location.pathname.startsWith(l.to)
+                ? { background: 'rgba(109,79,240,0.1)', color: '#6D4FF0' }
+                : { color: '#534A7A' }
+              }
+              onMouseEnter={(e) => {
+                if (!location.pathname.startsWith(l.to)) {
+                  e.currentTarget.style.background = 'rgba(109,79,240,0.06)';
+                  e.currentTarget.style.color = '#1A1532';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!location.pathname.startsWith(l.to)) {
+                  e.currentTarget.style.background = '';
+                  e.currentTarget.style.color = '#534A7A';
+                }
+              }}
             >
-              <span>{l.icon}</span>
+              <l.Icon size={14} />
               {l.key ? t(l.key) : l.label}
             </Link>
           ))}
@@ -105,8 +121,8 @@ export default function Navbar() {
                 onClick={() => changeLang(l.code)}
                 className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all duration-150 border ${
                   uiLang === l.code
-                    ? "border-gold bg-white/10 text-white"
-                    : "border-transparent text-white/60 hover:text-white hover:border-white/30"
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-transparent text-ink/50 hover:text-ink hover:border-ink/20"
                 }`}
               >
                 <span>{l.flag}</span> {l.label}
@@ -117,19 +133,20 @@ export default function Navbar() {
           <div className="relative">
             <button
               onClick={() => setLangOpen((v) => !v)}
-              className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150"
+              style={{ background: 'rgba(109,79,240,0.08)', color: '#1A1532' }}
             >
               <span>{activeLang.flag}</span>
               <span>{activeLang.label}</span>
             </button>
             {langOpen && (
-              <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-soft py-1.5 w-32 z-50 animate-fade-in">
+              <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-soft py-1.5 w-32 z-50 animate-fade-in" style={{ border: '1px solid rgba(109,79,240,0.1)' }}>
                 {LANGUAGES.map((l) => (
                   <button
                     key={l.code}
                     onClick={() => handleLangChange(l.code)}
                     className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors duration-150 ${
-                      l.code === currentLang ? "bg-slate-100 font-semibold text-navy" : "text-slate-600 hover:bg-slate-50"
+                      l.code === currentLang ? "bg-primary/8 font-semibold text-primary" : "text-ink/60 hover:bg-primary/5"
                     }`}
                   >
                     <span>{l.flag}</span> {l.label}
@@ -141,30 +158,35 @@ export default function Navbar() {
 
           {user && (
             <Link to="/profile" className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-gold-light font-semibold text-sm">
-                <Flame size={14} className="text-accent" /> {user.streak}
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-sm" style={{ background: 'rgba(255,92,138,0.1)', color: '#FF5C8A' }}>
+                <Flame size={14} /> {user.streak}
               </span>
-              <span className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-primary-light font-semibold text-sm">
-                <Gem size={14} className="text-primary-light" /> {coins}
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-sm" style={{ background: 'rgba(109,79,240,0.1)', color: '#6D4FF0' }}>
+                <Gem size={14} /> {coins}
               </span>
               <img
                 src={avatarUrl(user.avatar_style, user.avatar_seed)}
                 alt={user.full_name}
                 title={user.full_name}
-                className="w-8 h-8 rounded-full bg-white/10 shadow-sm"
+                className="w-8 h-8 rounded-full shadow-sm"
+                style={{ border: '2px solid rgba(109,79,240,0.2)' }}
               />
             </Link>
           )}
           <button
             onClick={handleLogout}
-            className="text-sm font-medium text-white/70 hover:text-white border border-white/20 hover:border-white/40 rounded-full px-4 py-1.5 transition-all duration-200"
+            className="text-sm font-medium rounded-full px-4 py-1.5 transition-all duration-200"
+            style={{ color: '#534A7A', border: '1px solid rgba(26,21,50,0.15)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#1A1532'; e.currentTarget.style.borderColor = 'rgba(26,21,50,0.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#534A7A'; e.currentTarget.style.borderColor = 'rgba(26,21,50,0.15)'; }}
           >
             {t("logout")}
           </button>
         </div>
 
         <button
-          className="md:hidden text-white p-2"
+          className="md:hidden p-2"
+          style={{ color: '#1A1532' }}
           onClick={() => setMenuOpen(true)}
           aria-label="Menu"
         >
@@ -181,19 +203,21 @@ export default function Navbar() {
         }`}
       >
         <div
-          className="absolute inset-0 bg-black/40"
+          className="absolute inset-0"
+          style={{ background: 'rgba(26,21,50,0.25)' }}
           onClick={() => setMenuOpen(false)}
         />
         <div
-          className={`absolute top-0 right-0 h-full w-72 bg-navy-dark shadow-2xl transition-transform duration-300 ${
+          className={`absolute top-0 right-0 h-full w-72 shadow-2xl transition-transform duration-300 ${
             menuOpen ? "translate-x-0" : "translate-x-full"
           } flex flex-col`}
+          style={{ background: 'white' }}
         >
-          <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-            <span className="flex items-center gap-2 font-extrabold text-white">
+          <div className="flex items-center justify-between px-5 h-16" style={{ borderBottom: '1px solid rgba(109,79,240,0.1)' }}>
+            <span className="flex items-center gap-2 font-extrabold" style={{ color: '#1A1532' }}>
               <Logo size="small" /> ZaboniAI
             </span>
-            <button onClick={() => setMenuOpen(false)} className="text-white/70 hover:text-white p-1">
+            <button onClick={() => setMenuOpen(false)} className="p-1" style={{ color: '#8A82AD' }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
               </svg>
@@ -204,29 +228,37 @@ export default function Navbar() {
             <Link
               to="/profile"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-5 py-4 border-b border-white/10"
+              className="flex items-center gap-3 px-5 py-4"
+              style={{ borderBottom: '1px solid rgba(109,79,240,0.1)' }}
             >
               <img
                 src={avatarUrl(user.avatar_style, user.avatar_seed)}
                 alt={user.full_name}
-                className="w-10 h-10 rounded-full bg-white/10"
+                className="w-10 h-10 rounded-full"
+                style={{ border: '2px solid rgba(109,79,240,0.2)' }}
               />
               <div>
-                <p className="text-white font-semibold text-sm">{user.full_name}</p>
-                <p className="text-gold-light text-xs font-semibold flex items-center gap-1"><Flame size={12} className="text-accent" /> {user.streak} day streak</p>
-                <p className="text-primary-light text-xs font-semibold flex items-center gap-1"><Gem size={12} className="text-primary-light" /> {coins} coins</p>
+                <p className="font-semibold text-sm" style={{ color: '#1A1532' }}>{user.full_name}</p>
+                <p className="text-xs font-semibold flex items-center gap-1" style={{ color: '#FF5C8A' }}>
+                  <Flame size={12} /> {user.streak} day streak
+                </p>
+                <p className="text-xs font-semibold flex items-center gap-1" style={{ color: '#6D4FF0' }}>
+                  <Gem size={12} /> {coins} coins
+                </p>
               </div>
             </Link>
           )}
 
-          <div className="flex items-center gap-1.5 px-5 py-3 border-b border-white/10">
+          <div className="flex items-center gap-1.5 px-5 py-3" style={{ borderBottom: '1px solid rgba(109,79,240,0.1)' }}>
             {UI_LANGUAGES.map((l) => (
               <button
                 key={l.code}
                 onClick={() => changeLang(l.code)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 border ${
-                  uiLang === l.code ? "border-gold bg-white/10 text-white" : "border-transparent bg-white/10 text-white/80"
-                }`}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 border`}
+                style={uiLang === l.code
+                  ? { borderColor: 'rgba(109,79,240,0.3)', background: 'rgba(109,79,240,0.1)', color: '#6D4FF0' }
+                  : { borderColor: 'transparent', background: 'rgba(109,79,240,0.06)', color: '#534A7A' }
+                }
               >
                 {l.flag} {l.label}
               </button>
@@ -238,13 +270,13 @@ export default function Navbar() {
               <Link
                 key={l.to}
                 to={l.to}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
-                  location.pathname.startsWith(l.to)
-                    ? "bg-gold text-navy-dark"
-                    : "text-white/85 hover:bg-white/10"
-                }`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150`}
+                style={location.pathname.startsWith(l.to)
+                  ? { background: 'rgba(109,79,240,0.1)', color: '#6D4FF0' }
+                  : { color: '#534A7A' }
+                }
               >
-                <span className="text-lg">{l.icon}</span>
+                <l.Icon size={18} />
                 <span>{l.key ? t(l.key) : l.label}</span>
               </Link>
             ))}
@@ -253,7 +285,8 @@ export default function Navbar() {
           <div className="px-3 pb-5">
             <button
               onClick={handleLogout}
-              className="w-full text-left px-3 py-3 rounded-xl text-gold-light font-medium hover:bg-white/10 transition-colors duration-150"
+              className="w-full text-left px-3 py-3 rounded-xl font-medium transition-colors duration-150"
+              style={{ color: '#FF5C8A' }}
             >
               {t("logout")}
             </button>

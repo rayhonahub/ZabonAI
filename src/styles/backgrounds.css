@@ -21,11 +21,24 @@
   transform: translateY(-2px);
 }
 
+.glass-card-light {
+  background: white;
+  border: 1px solid rgba(109,79,240,0.12);
+  box-shadow: 0 4px 16px rgba(109,79,240,0.06);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+.glass-card-light:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(109,79,240,0.12);
+}
+
 .glass-nav {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(109,79,240,0.1);
 }
 
 .glass-input {
@@ -44,4 +57,46 @@
   background: rgba(255,255,255,0.1);
   border-color: rgba(109,79,240,0.7);
   outline: none;
+}
+
+.glass-input-light {
+  background: white;
+  border: 1px solid rgba(109,79,240,0.2);
+  color: #1A1532;
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-input-light::placeholder {
+  color: rgba(26,21,50,0.35);
+}
+
+.glass-input-light:focus {
+  border-color: #6D4FF0;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(109,79,240,0.1);
+}
+
+.float-1 { animation: floatY 4.5s ease-in-out infinite; }
+.float-2 { animation: floatY 3.6s ease-in-out infinite 0.4s; }
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+.pulse-dot { animation: pulseRing 2s ease-out infinite; }
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }

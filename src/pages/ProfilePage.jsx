@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trophy, BookOpen, Gem, Flame, Users, Star } from "lucide-react";
+import { Trophy, BookOpen, Gem, Flame, Users, Star, Lock, Gift, Shuffle, Copy } from "lucide-react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { LANGUAGES, setLang } from "../utils/lang";
@@ -8,18 +8,18 @@ import { showToast } from "../utils/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 const LEVEL_BANDS = [
-  { key: "beginner", min: 0, max: 100, label: "Beginner 🌱" },
-  { key: "elementary", min: 101, max: 300, label: "Elementary 📚" },
-  { key: "intermediate", min: 301, max: 600, label: "Intermediate 🚀" },
-  { key: "advanced", min: 601, max: Infinity, label: "Advanced ⭐" },
+  { key: "beginner", min: 0, max: 100, label: "Beginner" },
+  { key: "elementary", min: 101, max: 300, label: "Elementary" },
+  { key: "intermediate", min: 301, max: 600, label: "Intermediate" },
+  { key: "advanced", min: 601, max: Infinity, label: "Advanced" },
 ];
 
 const ACHIEVEMENTS = [
-  { key: "first_steps", Icon: Star, color: "text-gold", title: "First Steps", sub: "Первый шаг", check: (s) => s.total_lessons_completed >= 1 },
-  { key: "on_fire", Icon: Flame, color: "text-accent", title: "On Fire", sub: "3-дневная серия", check: (s) => s.streak >= 3 },
-  { key: "quiz_master", Icon: Trophy, color: "text-primary-light", title: "Quiz Master", sub: "5 тестов пройдено", check: (s) => s.total_quizzes_passed >= 5 },
-  { key: "bookworm", Icon: BookOpen, color: "text-emerald-400", title: "Bookworm", sub: "10 уроков пройдено", check: (s) => s.total_lessons_completed >= 10 },
-  { key: "traveler", Icon: Star, color: "text-gold", title: "Traveler", sub: "Курс пройден", check: (s) => s.travel_completed },
+  { key: "first_steps", Icon: Star, color: "#f0a500", title: "First Steps", sub: "Первый шаг", check: (s) => s.total_lessons_completed >= 1 },
+  { key: "on_fire", Icon: Flame, color: "#FF5C8A", title: "On Fire", sub: "3-дневная серия", check: (s) => s.streak >= 3 },
+  { key: "quiz_master", Icon: Trophy, color: "#6D4FF0", title: "Quiz Master", sub: "5 тестов пройдено", check: (s) => s.total_quizzes_passed >= 5 },
+  { key: "bookworm", Icon: BookOpen, color: "#10b981", title: "Bookworm", sub: "10 уроков пройдено", check: (s) => s.total_lessons_completed >= 10 },
+  { key: "traveler", Icon: Star, color: "#f0a500", title: "Traveler", sub: "Курс пройден", check: (s) => s.travel_completed },
 ];
 
 function levelProgress(xp) {
@@ -31,11 +31,11 @@ function levelProgress(xp) {
 
 function StatCard({ Icon, iconColor, value, label, sub }) {
   return (
-    <div className="glass-card p-5 text-center">
-      <Icon size={22} className={`${iconColor} mx-auto mb-2`} />
-      <p className="text-2xl font-extrabold text-white font-sora">{value}</p>
-      <p className="text-xs font-semibold text-white/60 mt-0.5">{label}</p>
-      <p className="text-xs text-white/30">{sub}</p>
+    <div className="glass-card-light p-5 text-center">
+      <Icon size={22} style={{ color: iconColor, margin: '0 auto 8px' }} />
+      <p className="text-2xl font-extrabold font-sora" style={{ color: '#1A1532' }}>{value}</p>
+      <p className="text-xs font-semibold mt-0.5" style={{ color: '#534A7A' }}>{label}</p>
+      <p className="text-xs" style={{ color: '#8A82AD' }}>{sub}</p>
     </div>
   );
 }
@@ -71,7 +71,7 @@ export default function ProfilePage() {
 
   function handleCopyReferralLink() {
     navigator.clipboard.writeText(referral.referral_link);
-    showToast("✅ Ссылка скопирована!", "success");
+    showToast("Ссылка скопирована!", "success");
   }
 
   async function saveProfile(patch) {
@@ -116,12 +116,12 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-ink">
+      <div className="min-h-screen" style={{ background: '#F4F1FF' }}>
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 py-10 animate-pulse space-y-5">
-          <div className="h-40 bg-white/10 rounded-2xl" />
+          <div className="h-40 rounded-2xl" style={{ background: 'rgba(109,79,240,0.08)' }} />
           <div className="grid sm:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 bg-white/10 rounded-2xl" />)}
+            {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 rounded-2xl" style={{ background: 'rgba(109,79,240,0.08)' }} />)}
           </div>
         </div>
       </div>
@@ -131,17 +131,18 @@ export default function ProfilePage() {
   const { band, percent, toNext } = levelProgress(profile.xp_points);
 
   return (
-    <div className="min-h-screen bg-ink page-enter">
+    <div className="min-h-screen page-enter" style={{ background: '#F4F1FF' }}>
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-6">
 
         {/* Avatar + info */}
-        <div className="glass-card p-6 sm:p-8">
+        <div className="glass-card-light p-6 sm:p-8">
           <div className="flex flex-col items-center text-center gap-3">
             <img
               src={avatarUrl(profile.avatar_style, profile.avatar_seed)}
               alt={profile.full_name}
-              className="w-[120px] h-[120px] rounded-full border-2 border-primary/30 shadow-glow"
+              className="w-[120px] h-[120px] rounded-full"
+              style={{ border: '2px solid rgba(109,79,240,0.25)', boxShadow: '0 8px 24px rgba(109,79,240,0.15)' }}
             />
 
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -150,20 +151,21 @@ export default function ProfilePage() {
                   key={s.key}
                   onClick={() => handleStyleChange(s.key)}
                   title={s.label}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 ${
-                    profile.avatar_style === s.key
-                      ? "bg-primary text-white shadow-sm"
-                      : "bg-white/10 text-white/60 hover:bg-white/15"
-                  }`}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
+                  style={profile.avatar_style === s.key
+                    ? { background: '#6D4FF0', color: 'white' }
+                    : { background: 'rgba(109,79,240,0.08)', color: '#534A7A' }
+                  }
                 >
                   <span>{s.emoji}</span> {s.label}
                 </button>
               ))}
               <button
                 onClick={handleRandomize}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-primary/15 text-primary-light hover:bg-primary/25 transition-all duration-150"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
+                style={{ background: 'rgba(109,79,240,0.08)', color: '#6D4FF0' }}
               >
-                🎲 Randomize
+                <Shuffle size={13} /> Randomize
               </button>
             </div>
 
@@ -174,18 +176,20 @@ export default function ProfilePage() {
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={handleNameSave}
                 onKeyDown={(e) => e.key === "Enter" && handleNameSave()}
-                className="text-2xl font-extrabold text-white text-center border-b-2 border-primary/40 outline-none bg-transparent"
+                className="text-2xl font-extrabold text-center outline-none bg-transparent"
+                style={{ color: '#1A1532', borderBottom: '2px solid rgba(109,79,240,0.35)' }}
               />
             ) : (
               <h1
                 onClick={() => { setNameDraft(profile.full_name); setEditingName(true); }}
                 title="Click to edit"
-                className="text-2xl font-extrabold text-white font-sora cursor-pointer hover:opacity-70 transition-opacity duration-150"
+                className="text-2xl font-extrabold font-sora cursor-pointer hover:opacity-70 transition-opacity duration-150"
+                style={{ color: '#1A1532' }}
               >
                 {profile.full_name}
               </h1>
             )}
-            <p className="text-sm text-white/40">{profile.email}</p>
+            <p className="text-sm" style={{ color: '#8A82AD' }}>{profile.email}</p>
 
             {editingBio ? (
               <textarea
@@ -194,13 +198,14 @@ export default function ProfilePage() {
                 value={bioDraft}
                 onChange={(e) => setBioDraft(e.target.value)}
                 onBlur={handleBioSave}
-                className="glass-input w-full max-w-md p-2 text-sm resize-none rounded-xl"
+                className="glass-input-light w-full max-w-md p-2 text-sm resize-none rounded-xl"
               />
             ) : (
               <p
                 onClick={() => { setBioDraft(profile.bio || ""); setEditingBio(true); }}
                 title="Click to edit"
-                className="text-sm text-white/55 cursor-pointer hover:opacity-70 transition-opacity duration-150 max-w-md"
+                className="text-sm cursor-pointer hover:opacity-70 transition-opacity duration-150 max-w-md"
+                style={{ color: '#8A82AD' }}
               >
                 {profile.bio || "Add a bio / Добавить описание"}
               </p>
@@ -208,49 +213,50 @@ export default function ProfilePage() {
 
             <div className="w-full max-w-xs">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-sm font-bold text-white">{band.label}</span>
-                <span className="text-xs text-white/40">{profile.xp_points} XP</span>
+                <span className="text-sm font-bold" style={{ color: '#1A1532' }}>{band.label}</span>
+                <span className="text-xs" style={{ color: '#8A82AD' }}>{profile.xp_points} XP</span>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(109,79,240,0.1)' }}>
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full transition-all duration-700"
-                  style={{ width: `${percent}%` }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${percent}%`, background: 'linear-gradient(90deg, #6D4FF0, #9B7AFF)' }}
                 />
               </div>
               {band.max !== Infinity && (
-                <p className="text-xs text-white/40 mt-1">{toNext} XP to next level</p>
+                <p className="text-xs mt-1" style={{ color: '#8A82AD' }}>{toNext} XP to next level</p>
               )}
             </div>
 
             <button
               onClick={() => setEditing((v) => !v)}
-              className="mt-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-primary hover:bg-primary-dark shadow-md shadow-primary/20 hover:shadow-primary/40 transition-all duration-200"
+              className="mt-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)', boxShadow: '0 4px 12px rgba(109,79,240,0.2)' }}
             >
               {editing ? "Close / Закрыть" : "Edit Profile / Редактировать"}
             </button>
           </div>
 
           {editing && (
-            <div className="mt-6 pt-6 border-t border-white/10 space-y-4 animate-slide-up">
+            <div className="mt-6 pt-6 space-y-4 animate-slide-up" style={{ borderTop: '1px solid rgba(109,79,240,0.1)' }}>
               <div>
-                <label className="text-xs font-bold uppercase text-white/40 mb-1.5 block">Full name / Имя</label>
+                <label className="text-xs font-bold uppercase mb-1.5 block" style={{ color: '#8A82AD' }}>Full name / Имя</label>
                 <input
                   value={form.full_name}
                   onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                  className="glass-input w-full px-3 py-2.5 text-sm"
+                  className="glass-input-light w-full px-3 py-2.5 text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase text-white/40 mb-1.5 block">Bio / О себе</label>
+                <label className="text-xs font-bold uppercase mb-1.5 block" style={{ color: '#8A82AD' }}>Bio / О себе</label>
                 <textarea
                   rows={3}
                   value={form.bio}
                   onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                  className="glass-input w-full px-3 py-2.5 text-sm resize-none"
+                  className="glass-input-light w-full px-3 py-2.5 text-sm resize-none"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase text-white/40 mb-1.5 block">
+                <label className="text-xs font-bold uppercase mb-1.5 block" style={{ color: '#8A82AD' }}>
                   Language / Язык объяснений
                 </label>
                 <div className="flex gap-2">
@@ -258,11 +264,11 @@ export default function ProfilePage() {
                     <button
                       key={l.code}
                       onClick={() => setForm((f) => ({ ...f, selected_language: l.code }))}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                        form.selected_language === l.code
-                          ? "bg-primary text-white shadow-sm"
-                          : "bg-white/10 text-white/60 hover:bg-white/15"
-                      }`}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150"
+                      style={form.selected_language === l.code
+                        ? { background: '#6D4FF0', color: 'white' }
+                        : { background: 'rgba(109,79,240,0.08)', color: '#534A7A' }
+                      }
                     >
                       {l.flag} {l.label}
                     </button>
@@ -273,13 +279,15 @@ export default function ProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-6 py-2.5 rounded-xl font-semibold text-sm text-white bg-primary hover:bg-primary-dark transition-all duration-200 disabled:opacity-60"
+                  className="px-6 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)' }}
                 >
                   {saving ? "Saving..." : "Save / Сохранить"}
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-6 py-2.5 rounded-xl font-semibold text-sm text-white/60 bg-white/10 hover:bg-white/15 transition-all duration-200"
+                  className="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200"
+                  style={{ background: 'rgba(109,79,240,0.08)', color: '#534A7A' }}
                 >
                   Cancel / Отмена
                 </button>
@@ -290,30 +298,36 @@ export default function ProfilePage() {
 
         {/* Stat cards */}
         <div className="grid sm:grid-cols-4 gap-4">
-          <StatCard Icon={Flame} iconColor="text-accent" value={profile.streak} label="Day streak" sub="дней подряд" />
-          <StatCard Icon={Star} iconColor="text-gold" value={profile.xp_points} label="XP points" sub="очков опыта" />
-          <StatCard Icon={BookOpen} iconColor="text-primary-light" value={profile.total_lessons_completed} label="Lessons done" sub="уроков пройдено" />
-          <StatCard Icon={Gem} iconColor="text-primary-light" value={profile.coins} label="Coins" sub="монеты" />
+          <StatCard Icon={Flame} iconColor="#FF5C8A" value={profile.streak} label="Day streak" sub="дней подряд" />
+          <StatCard Icon={Star} iconColor="#f0a500" value={profile.xp_points} label="XP points" sub="очков опыта" />
+          <StatCard Icon={BookOpen} iconColor="#6D4FF0" value={profile.total_lessons_completed} label="Lessons done" sub="уроков пройдено" />
+          <StatCard Icon={Gem} iconColor="#6D4FF0" value={profile.coins} label="Coins" sub="монеты" />
         </div>
 
         {/* Achievements */}
-        <div className="glass-card p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-white font-sora mb-0.5">Achievements</h2>
-          <p className="text-sm text-white/40 mb-5">Достижения</p>
+        <div className="glass-card-light p-6 sm:p-8">
+          <h2 className="text-lg font-bold font-sora mb-0.5" style={{ color: '#1A1532' }}>Achievements</h2>
+          <p className="text-sm mb-5" style={{ color: '#8A82AD' }}>Достижения</p>
           <div className="grid sm:grid-cols-5 gap-4">
             {ACHIEVEMENTS.map((a) => {
               const unlocked = a.check(profile);
               return (
                 <div
                   key={a.key}
-                  className={`relative rounded-xl p-4 text-center border transition-all duration-200 ${
-                    unlocked ? "border-primary/40 bg-primary/10" : "border-white/10 bg-white/5 opacity-50"
-                  }`}
+                  className="relative rounded-xl p-4 text-center border transition-all duration-200"
+                  style={unlocked
+                    ? { borderColor: 'rgba(109,79,240,0.3)', background: 'rgba(109,79,240,0.06)' }
+                    : { borderColor: 'rgba(26,21,50,0.1)', background: 'rgba(26,21,50,0.03)', opacity: 0.6 }
+                  }
                 >
-                  {!unlocked && <span className="absolute top-2 right-2 text-xs text-white/30">🔒</span>}
-                  <a.Icon size={28} className={`${a.color} mx-auto mb-2 ${!unlocked ? "opacity-40" : ""}`} />
-                  <p className="text-sm font-bold text-white">{a.title}</p>
-                  <p className="text-xs text-white/40">{a.sub}</p>
+                  {!unlocked && (
+                    <span className="absolute top-2 right-2">
+                      <Lock size={11} style={{ color: '#8A82AD' }} />
+                    </span>
+                  )}
+                  <a.Icon size={28} style={{ color: unlocked ? a.color : '#8A82AD', margin: '0 auto 8px', opacity: unlocked ? 1 : 0.5 }} />
+                  <p className="text-sm font-bold" style={{ color: '#1A1532' }}>{a.title}</p>
+                  <p className="text-xs" style={{ color: '#8A82AD' }}>{a.sub}</p>
                 </div>
               );
             })}
@@ -322,29 +336,32 @@ export default function ProfilePage() {
 
         {/* Referral */}
         {referral && (
-          <div className="glass-card p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-white font-sora mb-1">🎁 Пригласи друга / Даъват кун дӯстро</h2>
-            <p className="text-sm text-white/55 mb-1">За каждого приглашённого друга ты получаешь 💎 50 монет!</p>
-            <p className="text-sm text-white/55 mb-5">Твой друг получает 💎 20 монет в подарок!</p>
+          <div className="glass-card-light p-6 sm:p-8">
+            <h2 className="text-lg font-bold font-sora mb-1 flex items-center gap-2" style={{ color: '#1A1532' }}>
+              <Gift size={18} style={{ color: '#6D4FF0' }} /> Пригласи друга / Даъват кун дӯстро
+            </h2>
+            <p className="text-sm mb-1" style={{ color: '#8A82AD' }}>За каждого приглашённого друга ты получаешь <Gem size={13} className="inline" style={{ color: '#6D4FF0' }} /> 50 монет!</p>
+            <p className="text-sm mb-5" style={{ color: '#8A82AD' }}>Твой друг получает <Gem size={13} className="inline" style={{ color: '#6D4FF0' }} /> 20 монет в подарок!</p>
 
             <div className="flex flex-col sm:flex-row gap-2 mb-5">
               <input
                 readOnly
                 value={referral.referral_link}
                 onFocus={(e) => e.target.select()}
-                className="glass-input flex-1 px-3 py-2.5 text-sm"
+                className="glass-input-light flex-1 px-3 py-2.5 text-sm"
               />
               <button
                 onClick={handleCopyReferralLink}
-                className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-primary hover:bg-primary-dark transition-all duration-200 whitespace-nowrap"
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 flex items-center gap-2 justify-center whitespace-nowrap"
+                style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)' }}
               >
-                Copy 📋
+                <Copy size={14} /> Copy
               </button>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-5">
-              <StatCard Icon={Users} iconColor="text-primary-light" value={referral.referral_count} label="Приглашено друзей" sub="referrals" />
-              <StatCard Icon={Gem} iconColor="text-primary-light" value={referral.coins_earned} label="Заработано монет" sub="coins earned" />
+              <StatCard Icon={Users} iconColor="#6D4FF0" value={referral.referral_count} label="Приглашено друзей" sub="referrals" />
+              <StatCard Icon={Gem} iconColor="#6D4FF0" value={referral.coins_earned} label="Заработано монет" sub="coins earned" />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -352,40 +369,45 @@ export default function ProfilePage() {
                 href={`https://t.me/share/url?url=${encodeURIComponent(referral.referral_link)}&text=${encodeURIComponent("Учи английский бесплатно с ИИ!")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#229ED9] hover:opacity-90 transition-all duration-200"
+                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white hover:opacity-90 transition-all duration-200"
+                style={{ background: '#229ED9' }}
               >
-                📱 Поделиться в Telegram
+                Поделиться в Telegram
               </a>
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(`Учи английский с ZaboniAI! ${referral.referral_link}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#25D366] hover:opacity-90 transition-all duration-200"
+                className="flex-1 text-center px-5 py-2.5 rounded-xl font-semibold text-sm text-white hover:opacity-90 transition-all duration-200"
+                style={{ background: '#25D366' }}
               >
-                📲 Поделиться в WhatsApp
+                Поделиться в WhatsApp
               </a>
             </div>
           </div>
         )}
 
         {/* Activity */}
-        <div className="glass-card p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-white font-sora mb-0.5">Recent Activity</h2>
-          <p className="text-sm text-white/40 mb-5">Недавняя активность</p>
+        <div className="glass-card-light p-6 sm:p-8">
+          <h2 className="text-lg font-bold font-sora mb-0.5" style={{ color: '#1A1532' }}>Recent Activity</h2>
+          <p className="text-sm mb-5" style={{ color: '#8A82AD' }}>Недавняя активность</p>
           {activity.length === 0 ? (
-            <p className="text-sm text-white/40">No activity yet / Пока нет активности</p>
+            <p className="text-sm" style={{ color: '#8A82AD' }}>No activity yet / Пока нет активности</p>
           ) : (
             <div className="space-y-2">
               {activity.map((a) => (
                 <div
                   key={a.lesson_id}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(109,79,240,0.04)' }}
                 >
-                  <span className="text-sm font-medium text-white/80">{a.lesson_title || `Lesson #${a.lesson_id}`}</span>
+                  <span className="text-sm font-medium" style={{ color: '#1A1532' }}>{a.lesson_title || `Lesson #${a.lesson_id}`}</span>
                   <span
-                    className={`text-sm font-bold px-2.5 py-1 rounded-full ${
-                      a.score >= 60 ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                    }`}
+                    className="text-sm font-bold px-2.5 py-1 rounded-full"
+                    style={a.score >= 60
+                      ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
+                      : { background: 'rgba(244,63,94,0.1)', color: '#e11d48' }
+                    }
                   >
                     {a.score}%
                   </span>

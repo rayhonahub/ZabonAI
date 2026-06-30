@@ -17,13 +17,14 @@ export default {
         primary: {
           DEFAULT: "#6D4FF0",
           dark: "#4730B0",
-          light: "#9B82FF",
+          light: "#9B7AFF",
         },
         accent: {
           DEFAULT: "#FF5C8A",
           dark: "#C7396A",
         },
-        ink: "#0F0C28",
+        surface: "#F4F1FF",
+        ink: "#1A1532",
       },
       fontFamily: {
         sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],

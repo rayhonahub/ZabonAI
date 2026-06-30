@@ -15,8 +15,8 @@ body {
 }
 
 body {
-  background-color: #0F0C28;
-  color: #e2e8f0;
+  background-color: #F4F1FF;
+  color: #1A1532;
 }
 
 h1, h2, h3 {
@@ -31,16 +31,16 @@ h1, h2, h3 {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.03);
+  background: rgba(109,79,240,0.04);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
+  background: rgba(109,79,240,0.2);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.25);
+  background: rgba(109,79,240,0.35);
 }
 
 .bg-grain {
