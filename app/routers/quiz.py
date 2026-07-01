@@ -1,11 +1,89 @@
+import random
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.deps import get_db, get_current_user
 from app.level_utils import level_from_xp
-from datetime import datetime
+from datetime import datetime, date
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
+
+
+@router.get("/daily-challenge", response_model=list[schemas.DailyChallengeQuestion])
+def get_daily_challenge(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    all_questions = db.query(models.QuizQuestion).all()
+    if not all_questions:
+        return []
+    seed = date.today().isoformat()
+    rand = random.Random(seed)
+    picked = rand.sample(all_questions, min(5, len(all_questions)))
+    return picked
+
+
+@router.get("/daily-challenge/status")
+def daily_challenge_status(
+    current_user: models.User = Depends(get_current_user),
+):
+    today = date.today()
+    already_done = (
+        current_user.last_daily_challenge_at is not None
+        and current_user.last_daily_challenge_at.date() == today
+    )
+    return {"already_done_today": already_done}
+
+
+@router.post("/daily-challenge/submit", response_model=schemas.DailyChallengeResult)
+def submit_daily_challenge(
+    data: schemas.DailySubmit,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    today = date.today()
+    if (
+        current_user.last_daily_challenge_at is not None
+        and current_user.last_daily_challenge_at.date() == today
+    ):
+        return schemas.DailyChallengeResult(
+            score=0, total=5, correct=0,
+            coins_earned=0, xp_earned=0, already_done_today=True,
+        )
+
+    all_questions = db.query(models.QuizQuestion).all()
+    seed = today.isoformat()
+    rand = random.Random(seed)
+    questions = rand.sample(all_questions, min(5, len(all_questions)))
+
+    correct = 0
+    for q in questions:
+        user_answer = data.answers.get(str(q.id))
+        if user_answer and user_answer.lower() == q.correct_answer.lower():
+            correct += 1
+
+    total = len(questions)
+    score = round((correct / total) * 100, 1) if total > 0 else 0.0
+
+    coins_earned = 0
+    xp_earned = 0
+    if score >= 60:
+        coins_earned = 15
+        xp_earned = 15
+        current_user.coins += coins_earned
+        current_user.xp_points += xp_earned
+        current_user.weekly_xp = (current_user.weekly_xp or 0) + xp_earned
+        current_user.daily_challenge_streak = (current_user.daily_challenge_streak or 0) + 1
+        current_user.level = level_from_xp(current_user.xp_points)
+
+    current_user.last_daily_challenge_at = datetime.utcnow()
+    db.commit()
+
+    return schemas.DailyChallengeResult(
+        score=score, total=total, correct=correct,
+        coins_earned=coins_earned, xp_earned=xp_earned,
+        already_done_today=False,
+    )
 
 
 @router.get("/{lesson_id}", response_model=list[schemas.QuizQuestionResponse])
@@ -83,10 +161,12 @@ def submit_quiz(
 
     if is_first_completion:
         current_user.xp_points += 10
+        current_user.weekly_xp = (current_user.weekly_xp or 0) + 10
         current_user.total_lessons_completed += 1
         current_user.coins += 10
     if newly_passed:
         current_user.xp_points += 20
+        current_user.weekly_xp = (current_user.weekly_xp or 0) + 20
         current_user.total_quizzes_passed += 1
         current_user.coins += 20
     if is_first_completion or newly_passed:

@@ -74,6 +74,29 @@ def get_my_coins(
     return {"coins": current_user.coins}
 
 
+@router.get("/leaderboard", response_model=list[schemas.LeaderboardEntry])
+def get_leaderboard(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    users = (
+        db.query(models.User)
+        .order_by(models.User.weekly_xp.desc())
+        .limit(10)
+        .all()
+    )
+    return [
+        schemas.LeaderboardEntry(
+            rank=i + 1,
+            full_name=u.full_name,
+            avatar_seed=u.avatar_seed or "default",
+            avatar_style=u.avatar_style or "adventurer",
+            weekly_xp=u.weekly_xp or 0,
+        )
+        for i, u in enumerate(users)
+    ]
+
+
 @router.get("/summary", response_model=schemas.ProgressSummary)
 def get_summary(
     db: Session = Depends(get_db),

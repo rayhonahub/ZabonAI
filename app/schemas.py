@@ -32,6 +32,12 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    streak_bonus_awarded: bool = False
+    streak: int = 0
+
 
 
 class CourseCreate(BaseModel):
@@ -205,3 +211,37 @@ class ReferralInfo(BaseModel):
     referral_link: str
     referral_count: int
     coins_earned: int
+
+
+class DailyChallengeQuestion(BaseModel):
+    id: int
+    question: str
+    option_a: str
+    option_b: str
+    option_c: Optional[str]
+    option_d: Optional[str]
+    correct_answer: str
+
+    class Config:
+        from_attributes = True
+
+
+class DailySubmit(BaseModel):
+    answers: dict
+
+
+class DailyChallengeResult(BaseModel):
+    score: float
+    total: int
+    correct: int
+    coins_earned: int
+    xp_earned: int
+    already_done_today: bool
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    full_name: str
+    avatar_seed: str
+    avatar_style: str
+    weekly_xp: int

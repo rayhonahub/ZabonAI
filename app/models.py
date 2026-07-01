@@ -116,5 +116,10 @@ class User(Base):
     referred_by = Column(String, nullable=True)
     referral_count = Column(Integer, default=0)
 
+    weekly_xp = Column(Integer, default=0)
+    streak_bonus_claimed_at = Column(DateTime, nullable=True)
+    last_daily_challenge_at = Column(DateTime, nullable=True)
+    daily_challenge_streak = Column(Integer, default=0)
+
     progress = relationship("UserProgress", back_populates="user")
     chat_history = relationship("AIChatHistory", back_populates="user")

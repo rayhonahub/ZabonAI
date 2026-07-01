@@ -33,6 +33,10 @@ def run_migrations():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by VARCHAR",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_count INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_xp INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_bonus_claimed_at TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_challenge_at TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_challenge_streak INTEGER DEFAULT 0",
     ]
     with engine.begin() as conn:
         for stmt in statements:
