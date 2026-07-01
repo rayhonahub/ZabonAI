@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag, Trophy, X } from "lucide-react";
+import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag, Trophy, X, Swords } from "lucide-react";
 import api from "../api/axios";
 import { avatarUrl } from "../utils/avatar";
 
 const links = [
   { to: "/courses", label: "Курсҳо", Icon: BookOpen },
+  { to: "/duel", label: "Дуэл", Icon: Swords },
   { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
   { to: "/practice", label: "Машқ", Icon: Puzzle },
   { to: "/daily", label: "Бозии ҳаррӯза", Icon: Zap },

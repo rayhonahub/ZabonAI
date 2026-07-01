@@ -19,6 +19,7 @@ import ShopPage from "./pages/ShopPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PlacementTestPage from "./pages/PlacementTestPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import DuelPage from "./pages/DuelPage";
 
 export default function App() {
   const location = useLocation();
@@ -144,6 +145,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/duel"
+            element={
+              <ProtectedRoute>
+                <DuelPage />
               </ProtectedRoute>
             }
           />
