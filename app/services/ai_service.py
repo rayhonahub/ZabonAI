@@ -122,6 +122,35 @@ Return ONLY valid JSON array, no extra text:
     return json.loads(text)
 
 
+def generate_word_examples(word: str, translation: str) -> list:
+    """Generate 3 contextual examples for a vocabulary word with Tajik translation"""
+    prompt = f"""
+For the English word "{word}" (Tajik: {translation}), give exactly 3 real-life usage examples.
+Return ONLY valid JSON array, no extra text:
+[
+  {{
+    "english": "sentence using {word}",
+    "tajik": "тарҷумаи ҷумла ба тоҷикӣ"
+  }}
+]
+Keep sentences simple and practical. Tajik translation must be accurate.
+"""
+    try:
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        return json.loads(text)
+    except Exception:
+        return [
+            {"english": f"I use {word} every day.", "tajik": f"Ман ҳар рӯз {translation} истифода мекунам."},
+            {"english": f"This is a {word}.", "tajik": f"Ин {translation} аст."},
+            {"english": f"She likes {word}.", "tajik": f"Ӯ {translation}-ро дӯст дорад."},
+        ]
+
+
 def get_weak_topic_advice(weak_topics: list) -> str:
     if not weak_topics:
         return "Отлично! У тебя нет слабых тем. Продолжай в том же духе! 🎉"

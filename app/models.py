@@ -5,6 +5,14 @@ import random
 from app.database import Base
 
 
+class WordExample(Base):
+    __tablename__ = "word_examples"
+    id = Column(Integer, primary_key=True, index=True)
+    word = Column(String, nullable=False, index=True)
+    examples = Column(Text, nullable=False)  # JSON string
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Course(Base):
     __tablename__ = "courses"
 
