@@ -32,7 +32,11 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
-      navigate("/courses");
+      if (res.data.streak_bonus_awarded) {
+        sessionStorage.setItem("pending_streak_bonus", "true");
+      }
+      const testDone = localStorage.getItem("placement_test_done");
+      navigate(testDone ? "/courses" : "/placement-test");
     } catch {
       setError("Email ё парол нодуруст аст");
     } finally {

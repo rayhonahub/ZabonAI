@@ -42,7 +42,7 @@ export default function RegisterPage() {
       });
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
-      navigate("/onboarding");
+      navigate("/placement-test");
     } catch (err) {
       const detail = err.response?.data?.detail || '';
       if (detail.toLowerCase().includes('already') || detail.toLowerCase().includes('registered')) {

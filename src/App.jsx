@@ -17,6 +17,8 @@ import ProfilePage from "./pages/ProfilePage";
 import PracticePage from "./pages/PracticePage";
 import ShopPage from "./pages/ShopPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import PlacementTestPage from "./pages/PlacementTestPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
 
 export default function App() {
   const location = useLocation();
@@ -34,6 +36,15 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          <Route
+            path="/placement-test"
+            element={
+              <ProtectedRoute>
+                <PlacementTestPage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/onboarding"
@@ -124,6 +135,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ShopPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
               </ProtectedRoute>
             }
           />

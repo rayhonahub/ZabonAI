@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag } from "lucide-react";
+import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag, Trophy, X } from "lucide-react";
 import api from "../api/axios";
 import { avatarUrl } from "../utils/avatar";
 
@@ -8,7 +8,8 @@ const links = [
   { to: "/courses", label: "Курсҳо", Icon: BookOpen },
   { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
   { to: "/practice", label: "Машқ", Icon: Puzzle },
-  { to: "/daily", label: "Рӯзона", Icon: Zap },
+  { to: "/daily", label: "Бозии ҳаррӯза", Icon: Zap },
+  { to: "/leaderboard", label: "Беҳтаринҳо", Icon: Trophy },
   { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
   { to: "/ai", label: "ИИ Чат", Icon: Sparkles },
   { to: "/shop", label: "Мағоза", Icon: ShoppingBag },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [coins, setCoins] = useState(Number(localStorage.getItem("coins") || 0));
+  const [streakToast, setStreakToast] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,6 +36,12 @@ export default function Navbar() {
         localStorage.setItem("coins", String(res.data.coins));
       })
       .catch(() => {});
+
+    if (sessionStorage.getItem("pending_streak_bonus")) {
+      sessionStorage.removeItem("pending_streak_bonus");
+      setStreakToast(true);
+      setTimeout(() => setStreakToast(false), 4000);
+    }
   }, []);
 
   useEffect(() => {
@@ -109,7 +117,11 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           {user && (
             <Link to="/profile" className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded font-semibold text-sm" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
+              <span
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded font-semibold text-sm"
+                style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}
+                title={`Силсила: ${user.streak % 10}/10 рӯз то мукофот`}
+              >
                 <Flame size={14} /> {user.streak}
               </span>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded font-semibold text-sm" style={{ background: 'rgba(45,212,191,0.1)', color: '#2DD4BF' }}>
@@ -146,6 +158,37 @@ export default function Navbar() {
           </svg>
         </button>
       </div>
+
+      {/* 10-day streak bonus toast */}
+      {streakToast && (
+        <div
+          style={{
+            position: 'fixed', top: 72, right: 16, zIndex: 999,
+            background: 'rgba(10,42,46,0.97)',
+            border: '1.5px solid rgba(251,191,36,0.5)',
+            boxShadow: '0 0 24px rgba(251,191,36,0.18)',
+            borderRadius: 8, padding: '0.9rem 1.1rem',
+            display: 'flex', alignItems: 'center', gap: 12,
+            maxWidth: 340,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+        >
+          <Sparkles size={20} style={{ color: '#FBBF24', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#FBBF24', fontWeight: 700, fontSize: 14, margin: '0 0 2px' }}>Офарин!</p>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: 0 }}>
+              Ту 10 рӯз пай дар пай омӯхтӣ! +100 танга 🎉
+            </p>
+          </div>
+          <button
+            onClick={() => setStreakToast(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Mobile slide-in drawer */}
       <div

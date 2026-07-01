@@ -1,247 +1,266 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Zap, Clock, CheckCircle, Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { usePageTitle } from "../hooks/usePageTitle";
 
-const QUESTION_SECONDS = 60;
-const LAST_DATE_KEY = "daily_challenge_last_date";
-const STREAK_KEY = "daily_streak";
+const SECS = 60;
+const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
+const OPTION_KEYS = ["a", "b", "c", "d"];
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+function CountdownRing({ timeLeft }) {
+  const r = 22;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - timeLeft / SECS);
+  const stroke = timeLeft <= 10 ? "#FBBF24" : "#14B8A6";
+  return (
+    <div style={{ position: "relative", width: 54, height: 54, flexShrink: 0 }}>
+      <svg width="54" height="54" viewBox="0 0 54 54">
+        <circle cx="27" cy="27" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.5" />
+        <circle
+          cx="27" cy="27" r={r} fill="none"
+          stroke={stroke} strokeWidth="3.5"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          transform="rotate(-90 27 27)"
+          style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
+        />
+      </svg>
+      <span style={{
+        position: "absolute", inset: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: stroke, fontWeight: 700, fontSize: 13,
+        transition: "color 0.3s",
+      }}>
+        {timeLeft}
+      </span>
+    </div>
+  );
 }
-
-function seededRandom(seedStr) {
-  let h = 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    h = (Math.imul(31, h) + seedStr.charCodeAt(i)) | 0;
-  }
-  let state = h >>> 0 || 1;
-  return function next() {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seededShuffle(arr, rand) {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-const MOCK_LEADERBOARD = [
-  { name: "Aziz K.", score: 5 },
-  { name: "Sara M.", score: 4 },
-  { name: "Farrukh T.", score: 4 },
-  { name: "Nilufar S.", score: 3 },
-  { name: "Jasur R.", score: 3 },
-];
 
 export default function DailyChallengePage() {
-  usePageTitle("Daily Challenge");
+  usePageTitle("Бозии ҳаррӯза");
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+
+  const [phase, setPhase] = useState("intro");
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [alreadyDone, setAlreadyDone] = useState(false);
   const [questions, setQuestions] = useState([]);
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
-  const [finished, setFinished] = useState(false);
-  const [streakBonus, setStreakBonus] = useState(false);
-  const [streak, setStreak] = useState(Number(localStorage.getItem(STREAK_KEY) || 0));
+  const [qIdx, setQIdx] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(SECS);
+  const [result, setResult] = useState(null);
+
   const timerRef = useRef(null);
+  const answersRef = useRef({});
+  const qIdxRef = useRef(0);
+  const questionsRef = useRef([]);
+  const chosenRef = useRef(null);
   const confettiFired = useRef(false);
 
+  // keep refs in sync
+  qIdxRef.current = qIdx;
+  questionsRef.current = questions;
+  chosenRef.current = chosen;
+
   useEffect(() => {
-    async function loadPool() {
-      try {
-        const coursesRes = await api.get("/courses/");
-        const courses = coursesRes.data;
-
-        const modulesByCourse = await Promise.all(
-          courses.map((c) => api.get(`/courses/${c.id}/modules`).then((r) => r.data.map((m) => ({ ...m, courseId: c.id }))))
-        );
-        const modules = modulesByCourse.flat();
-
-        const lessonsByModule = await Promise.all(
-          modules.map((m) =>
-            api
-              .get(`/courses/${m.courseId}/modules/${m.id}/lessons`)
-              .then((r) => r.data)
-              .catch(() => [])
-          )
-        );
-        const lessons = lessonsByModule.flat();
-
-        const quizzesByLesson = await Promise.all(
-          lessons.map((l) =>
-            api
-              .get(`/quiz/${l.id}`)
-              .then((r) => r.data.map((q) => ({ ...q, lesson_id: l.id })))
-              .catch(() => [])
-          )
-        );
-        const pool = quizzesByLesson.flat();
-
-        const rand = seededRandom(todayKey());
-        const picked = seededShuffle(pool, rand).slice(0, 5);
-        setQuestions(picked);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPool();
+    api.get("/quiz/daily-challenge/status")
+      .then((r) => setAlreadyDone(r.data.already_done_today))
+      .catch(() => {})
+      .finally(() => setStatusLoading(false));
   }, []);
 
+  async function startChallenge() {
+    setPhase("loading");
+    try {
+      const res = await api.get("/quiz/daily-challenge");
+      answersRef.current = {};
+      setQuestions(res.data);
+      setQIdx(0);
+      setChosen(null);
+      setPhase("quiz");
+    } catch {
+      setPhase("intro");
+    }
+  }
+
+  // Timer per question
   useEffect(() => {
-    if (loading || finished || questions.length === 0) return;
+    if (phase !== "quiz" || questions.length === 0) return;
     clearInterval(timerRef.current);
-    setTimeLeft(QUESTION_SECONDS);
+    setTimeLeft(SECS);
+
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          goNext(null);
+          if (chosenRef.current === null) {
+            const qi = qIdxRef.current;
+            const qs = questionsRef.current;
+            if (qi + 1 < qs.length) {
+              setQIdx(qi + 1);
+              setChosen(null);
+            } else {
+              doSubmit();
+            }
+          }
           return 0;
         }
         return t - 1;
       });
     }, 1000);
+
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, loading, questions.length, finished]);
-
-  function goNext(answerKey) {
-    const q = questions[index];
-    if (answerKey && q && answerKey.toLowerCase() === q.correct_answer?.toLowerCase()) {
-      setScore((s) => s + 1);
-    }
-    setSelected(null);
-    if (index + 1 < questions.length) {
-      setIndex((i) => i + 1);
-    } else {
-      finishChallenge();
-    }
-  }
-
-  function finishChallenge() {
-    clearInterval(timerRef.current);
-    setFinished(true);
-
-    const last = localStorage.getItem(LAST_DATE_KEY);
-    const today = todayKey();
-    if (last !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-      const newStreak = last === yesterday ? streak + 1 : 1;
-      setStreak(newStreak);
-      setStreakBonus(true);
-      localStorage.setItem(STREAK_KEY, String(newStreak));
-      localStorage.setItem(LAST_DATE_KEY, today);
-    }
-  }
+  }, [qIdx, phase, questions.length]);
 
   function handleAnswer(key) {
-    if (selected) return;
-    setSelected(key);
-    setTimeout(() => goNext(key), 350);
+    if (chosen !== null) return;
+    const q = questions[qIdx];
+    answersRef.current[String(q.id)] = key;
+    setChosen(key);
+    clearInterval(timerRef.current);
+
+    setTimeout(() => {
+      const nextIdx = qIdx + 1;
+      if (nextIdx < questions.length) {
+        setQIdx(nextIdx);
+        setChosen(null);
+      } else {
+        doSubmit();
+      }
+    }, 900);
+  }
+
+  async function doSubmit() {
+    clearInterval(timerRef.current);
+    setPhase("submitting");
+    try {
+      const res = await api.post("/quiz/daily-challenge/submit", { answers: answersRef.current });
+      setResult(res.data);
+    } catch {
+      setResult({ score: 0, correct: 0, total: questions.length, coins_earned: 0, xp_earned: 0 });
+    }
+    setPhase("result");
   }
 
   useEffect(() => {
-    if (finished && !confettiFired.current) {
+    if (phase === "result" && !confettiFired.current) {
       confettiFired.current = true;
-      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+      const correct = result?.correct ?? 0;
+      if (correct >= 3) confetti({ particleCount: 110, spread: 65, origin: { y: 0.6 } });
     }
-  }, [finished]);
+  }, [phase, result]);
 
-  const shareText = `I scored ${score}/${questions.length} on ZaboniAI Daily Challenge! 🎯`;
-  const optionKeys = ["a", "b", "c", "d"];
-  const yourPosition = [...MOCK_LEADERBOARD, { name: "You", score }]
-    .sort((a, b) => b.score - a.score)
-    .findIndex((e) => e.name === "You") + 1;
-
-  if (loading) {
+  // ── INTRO ──────────────────────────────────────────────
+  if (statusLoading || phase === "loading") {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div style={{ minHeight: "100vh", background: BG }}>
         <Navbar />
-        <div className="max-w-2xl mx-auto px-4 py-16 animate-pulse">
-          <div className="h-56 bg-white rounded-2xl shadow-card" />
+        <div style={{ maxWidth: 500, margin: "0 auto", padding: "3rem 1rem" }}>
+          <div style={{ height: 220, borderRadius: 6, background: "rgba(255,255,255,0.04)" }} className="animate-pulse" />
         </div>
       </div>
     );
   }
 
-  if (questions.length === 0) {
+  if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div style={{ minHeight: "100vh", background: BG }}>
         <Navbar />
-        <div className="text-center py-20 text-slate-400">
-          No quiz questions available yet for today's challenge / Пока нет вопросов для сегодняшнего вызова
-        </div>
-      </div>
-    );
-  }
-
-  if (finished) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <div className="max-w-md mx-auto px-4 py-16 text-center animate-slide-up">
-          <div className="bg-white rounded-2xl shadow-soft p-10">
-            <p className="text-5xl mb-3">🎯</p>
-            <h1 className="text-2xl font-extrabold text-navy mb-1">
-              {score}/{questions.length}
+        <div style={{ maxWidth: 500, margin: "0 auto", padding: "3rem 1rem" }}>
+          <div className="glass-card fade-up-1" style={{ padding: "2.5rem", textAlign: "center" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 64, height: 64, borderRadius: "50%",
+              background: "rgba(20,184,166,0.12)", border: "2px solid rgba(20,184,166,0.35)",
+              marginBottom: "1.25rem",
+            }}>
+              <Zap size={28} color="#14B8A6" />
+            </div>
+            <h1 style={{ color: "white", fontWeight: 600, fontSize: 24, margin: "0 0 0.75rem" }}>
+              Бозии ҳаррӯза
             </h1>
-            <p className="text-slate-500 mb-2">Daily Challenge complete! / Ежедневный вызов завершён!</p>
+            <p style={{ color: "rgba(255,255,255,0.58)", fontSize: 15, lineHeight: 1.75, margin: "0 0 2rem" }}>
+              Ҳар рӯз 5 саволи нав пайдо мешавад. Агар ту дуруст ҷавоб диҳӣ, 15 танга ва 15 XP мегирӣ. Бозиро ҳар рӯз гузарон, то силсилаатро нигоҳ дорӣ!
+            </p>
+            {alreadyDone ? (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                background: "rgba(45,212,191,0.06)", border: "1px solid rgba(45,212,191,0.18)",
+                borderRadius: 6, padding: "0.9rem 1.25rem",
+              }}>
+                <Clock size={17} color="#2DD4BF" style={{ flexShrink: 0 }} />
+                <span style={{ color: "#2DD4BF", fontWeight: 500, fontSize: 15 }}>
+                  Ту имрӯз аллакай бозӣ кардӣ! Пагоҳ боз биё.
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={startChallenge}
+                style={{
+                  width: "100%", background: "#14B8A6", color: "#04231F",
+                  border: "none", borderRadius: 6, padding: "0.82rem",
+                  fontWeight: 600, fontSize: 15, cursor: "pointer",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
+                Бозиро сар кун
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {streakBonus && (
-              <p className="inline-block bg-gold/10 text-gold-dark text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
-                🔥 +10 streak bonus — {streak} day streak!
+  // ── RESULT ─────────────────────────────────────────────
+  if (phase === "result" || phase === "submitting") {
+    const correct = result?.correct ?? 0;
+    const total = result?.total ?? questions.length;
+    const coins = result?.coins_earned ?? 0;
+    return (
+      <div style={{ minHeight: "100vh", background: BG }}>
+        <Navbar />
+        <div style={{ maxWidth: 480, margin: "0 auto", padding: "3rem 1rem", textAlign: "center" }}>
+          <div className="glass-card fade-up-1" style={{ padding: "2.5rem" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 72, height: 72, borderRadius: "50%",
+              background: "rgba(20,184,166,0.12)",
+              border: "2.5px solid #14B8A6",
+              boxShadow: "0 0 28px rgba(20,184,166,0.28)",
+              marginBottom: "1.25rem",
+            }}>
+              <Trophy size={30} color="#14B8A6" />
+            </div>
+            <h2 style={{ color: "white", fontWeight: 600, fontSize: 22, margin: "0 0 0.5rem" }}>
+              Ту {correct}/{total} дуруст ҷавоб додӣ!
+            </h2>
+            {coins > 0 ? (
+              <p style={{ color: "#FBBF24", fontWeight: 700, fontSize: 18, margin: "0 0 1.75rem" }}>
+                +{coins} танга
+              </p>
+            ) : (
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, margin: "0 0 1.75rem" }}>
+                Фардо дубора кӯшиш кун!
               </p>
             )}
-
-            <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left">
-              <p className="text-xs font-bold uppercase text-slate-400 mb-2">Leaderboard / Таблица лидеров</p>
-              {[...MOCK_LEADERBOARD, { name: "You", score, isYou: true }]
-                .sort((a, b) => b.score - a.score)
-                .map((entry, i) => (
-                  <div
-                    key={entry.name}
-                    className={`flex justify-between text-sm py-1 ${
-                      entry.isYou ? "font-bold text-navy" : "text-slate-500"
-                    }`}
-                  >
-                    <span>
-                      #{i + 1} {entry.name}
-                    </span>
-                    <span>{entry.score}/5</span>
-                  </div>
-                ))}
-              <p className="text-xs text-slate-400 mt-2">Your position / Твоя позиция: #{yourPosition}</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
+            <div style={{ display: "flex", gap: 10 }}>
               <button
-                onClick={() => {
-                  if (navigator.share) navigator.share({ text: shareText }).catch(() => {});
-                  else navigator.clipboard?.writeText(shareText);
-                }}
-                className="w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all duration-200"
+                onClick={() => navigate("/courses")}
+                style={{ flex: 1, background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6, padding: "0.75rem", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
               >
-                Share result / Поделиться
+                Курсҳо
               </button>
               <button
-                onClick={() => navigate("/progress")}
-                className="w-full py-3 rounded-xl font-semibold text-navy bg-slate-100 hover:bg-slate-200 transition-all duration-200"
+                onClick={() => navigate("/leaderboard")}
+                style={{ flex: 1, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "0.75rem", fontWeight: 500, fontSize: 14, cursor: "pointer" }}
               >
-                View progress / Посмотреть прогресс
+                Беҳтаринҳо
               </button>
             </div>
           </div>
@@ -250,62 +269,82 @@ export default function DailyChallengePage() {
     );
   }
 
-  const q = questions[index];
+  // ── QUIZ ───────────────────────────────────────────────
+  if (questions.length === 0) {
+    return (
+      <div style={{ minHeight: "100vh", background: BG }}>
+        <Navbar />
+        <div style={{ textAlign: "center", padding: "5rem 1rem", color: "rgba(255,255,255,0.35)", fontSize: 15 }}>
+          Имрӯз саволе нест. Баъдтар биё.
+        </div>
+      </div>
+    );
+  }
+
+  const q = questions[qIdx];
+  const progressPct = ((qIdx + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div style={{ minHeight: "100vh", background: BG }}>
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-extrabold text-navy">⚡ Daily Challenge</h1>
-          <span
-            className={`text-sm font-bold px-3 py-1.5 rounded-full ${
-              timeLeft <= 10 ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-500"
-            }`}
-          >
-            ⏱ {timeLeft}s
-          </span>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "2rem 1rem" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+          <div style={{ flex: 1, marginRight: 16 }}>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: "0 0 6px" }}>
+              Савол {qIdx + 1} / {questions.length}
+            </p>
+            <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2 }}>
+              <div style={{
+                height: "100%", width: `${progressPct}%`,
+                background: "linear-gradient(90deg, #14B8A6, #2DD4BF)",
+                borderRadius: 2, transition: "width 0.4s ease",
+              }} />
+            </div>
+          </div>
+          <CountdownRing timeLeft={timeLeft} />
         </div>
 
-        <div className="flex justify-between text-xs font-semibold text-slate-400 mb-2">
-          <span>
-            Question {index + 1} / {questions.length}
-          </span>
-          <span>Score: {score}</span>
-        </div>
-        <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-6">
-          <div
-            className="h-full bg-gradient-to-r from-navy to-gold rounded-full transition-all duration-500"
-            style={{ width: `${((index + 1) / questions.length) * 100}%` }}
-          />
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8" key={q.id}>
-          <h2 className="text-lg font-bold text-navy mb-6">{q.question}</h2>
-          <div className="space-y-3">
-            {optionKeys.map((key) => {
+        {/* Question card */}
+        <div className="glass-card" style={{ padding: "2rem" }} key={q.id}>
+          <h2 style={{ color: "white", fontWeight: 500, fontSize: 18, textAlign: "center", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
+            {q.question}
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {OPTION_KEYS.map((key) => {
               const text = q[`option_${key}`];
               if (!text) return null;
-              const isSelected = selected === key;
+              const isChosen = chosen === key;
+              const isCorrect = chosen !== null && key === q.correct_answer?.toLowerCase();
+              const isWrong = isChosen && chosen !== null && key !== q.correct_answer?.toLowerCase();
+              let border = "1.5px solid rgba(45,212,191,0.12)";
+              let bg = "rgba(255,255,255,0.02)";
+              let color = "rgba(255,255,255,0.82)";
+              if (isCorrect) { border = "1.5px solid #2DD4BF"; bg = "rgba(45,212,191,0.08)"; color = "#2DD4BF"; }
+              if (isWrong)   { border = "1.5px solid #FBBF24"; bg = "rgba(251,191,36,0.06)"; color = "#FBBF24"; }
               return (
                 <button
                   key={key}
-                  disabled={!!selected}
                   onClick={() => handleAnswer(key)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${
-                    isSelected
-                      ? "border-gold bg-gold/10 scale-[1.01]"
-                      : "border-slate-100 hover:border-navy/30 hover:bg-slate-50"
-                  } disabled:cursor-default`}
+                  disabled={chosen !== null}
+                  style={{
+                    width: "100%", background: bg, border, borderRadius: 6,
+                    padding: "0.75rem 1rem", color, fontSize: 14,
+                    textAlign: "left", cursor: chosen !== null ? "default" : "pointer",
+                    transition: "all 0.2s", display: "flex", alignItems: "center", gap: 10,
+                  }}
                 >
-                  <span
-                    className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                      isSelected ? "bg-gold text-navy-dark" : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
+                  <span style={{
+                    width: 24, height: 24, borderRadius: 4, flexShrink: 0,
+                    background: "rgba(255,255,255,0.05)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700,
+                    color: isCorrect ? "#2DD4BF" : isWrong ? "#FBBF24" : "rgba(255,255,255,0.3)",
+                  }}>
                     {key.toUpperCase()}
                   </span>
-                  <span className="text-sm text-slate-700">{text}</span>
+                  <span style={{ flex: 1 }}>{text}</span>
+                  {isCorrect && <CheckCircle size={15} color="#2DD4BF" style={{ flexShrink: 0 }} />}
                 </button>
               );
             })}
