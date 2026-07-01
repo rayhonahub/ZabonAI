@@ -12,6 +12,82 @@ import { generatePracticeExercises } from "../utils/practiceExercises";
 import { showToast } from "../utils/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 
+function AIWordExamples({ word, translation }) {
+  const [examples, setExamples] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  function fetchExamples() {
+    if (examples) { setOpen(true); return; }
+    setLoading(true);
+    setOpen(true);
+    api.get(`/ai/word-examples/${encodeURIComponent(word)}`, { params: { translation } })
+      .then(res => setExamples(res.data.examples))
+      .catch(() => setExamples([]))
+      .finally(() => setLoading(false));
+  }
+
+  return (
+    <div style={{
+      background: 'rgba(20,184,166,0.06)',
+      border: '1px solid rgba(45,212,191,0.2)',
+      borderRadius: 8,
+      padding: '12px 14px',
+      marginBottom: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 15 }}>{word}</span>
+          <span style={{ color: '#FBBF24', fontWeight: 500, fontSize: 13, marginLeft: 10 }}>{translation}</span>
+        </div>
+        <button
+          onClick={fetchExamples}
+          style={{
+            background: 'none',
+            border: '1px solid rgba(45,212,191,0.35)',
+            borderRadius: 6,
+            color: '#2DD4BF',
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '4px 10px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          AI мисолҳо нишон деҳ
+        </button>
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          {loading ? (
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontStyle: 'italic' }}>
+              Мисолҳо омода мешаванд...
+            </p>
+          ) : examples && examples.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {examples.map((ex, i) => (
+                <div key={i} style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 6,
+                  padding: '8px 10px',
+                  borderLeft: '2px solid rgba(45,212,191,0.3)',
+                }}>
+                  <p style={{ color: 'white', fontSize: 13, margin: '0 0 3px' }}>{ex.english}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, margin: 0, fontStyle: 'italic' }}>{ex.tajik}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Мисол ёфт нашуд</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function readingTimeMinutes(content) {
   if (!content) return 1;
   const words = content.trim().split(/\s+/).filter(Boolean).length;
@@ -249,11 +325,23 @@ export default function LessonPage() {
           <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8 animate-slide-up" key={readingIndex}>
             {onVocabStep ? (
               <>
-                <h2 className="text-lg font-bold text-navy mb-1">Vocabulary / Словарь</h2>
+                <h2 className="text-lg font-bold text-navy mb-1">Калимаҳо</h2>
                 <p className="text-xs text-slate-400 mb-4">Hover a card to flip it / Наведи, чтобы перевернуть</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                   {vocab.map((v, i) => (
                     <VocabCard key={i} word={v.word} translation={v.translation} />
+                  ))}
+                </div>
+                <div style={{
+                  borderTop: '1px solid rgba(45,212,191,0.15)',
+                  paddingTop: 14,
+                  marginTop: 6,
+                }}>
+                  <p style={{ color: 'rgba(45,212,191,0.8)', fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                    ✨ Мисолҳои AI
+                  </p>
+                  {vocab.map((v, i) => (
+                    <AIWordExamples key={i} word={v.word} translation={v.translation} />
                   ))}
                 </div>
               </>
