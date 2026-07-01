@@ -11,3 +11,4 @@ google-generativeai
 pillow
 pydantic[email]
 SpeechRecognition
+websockets

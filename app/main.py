@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, run_migrations
-from app.routers import auth, courses, quiz, progress, ai, profile
+from app.routers import auth, courses, quiz, progress, ai, profile, duel
 
 
 Base.metadata.create_all(bind=engine)
@@ -29,6 +29,7 @@ app.include_router(quiz.router)
 app.include_router(progress.router)
 app.include_router(ai.router)
 app.include_router(profile.router)
+app.include_router(duel.router)
 
 
 @app.get("/")
