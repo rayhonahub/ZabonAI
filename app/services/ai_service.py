@@ -17,7 +17,7 @@ LANGUAGE_NAMES = {
 
 
 def _lang_instruction(lang: str) -> str:
-    name = LANGUAGE_NAMES.get(lang, "Russian")
+    name = LANGUAGE_NAMES.get(lang, "Tajik")
     return f"Explain in {name}."
 
 
@@ -31,13 +31,15 @@ def safe_generate(prompt, image=None) -> str:
             return model.generate_content([prompt, image]).text
         return model.generate_content(prompt).text
     except ResourceExhausted:
-        return "⚠️ AI временно недоступен. Лимит запросов исчерпан. Попробуйте через час."
+        return "⚠️ AI ҳоло дастрас нест. Лимити дархостҳо тамом шуд. Лутфан баъд аз як соат кӯшиш кунед."
     except Exception as e:
         return f"⚠️ Ошибка AI: {str(e)}"
 
 
-def check_grammar(text: str, lang: str = "ru") -> str:
+def check_grammar(text: str, lang: str = "tj") -> str:
     prompt = f"""
+IMPORTANT: Explain mistakes in TAJIK language only. Do NOT use Russian under any circumstances.
+
 You are an English grammar teacher.
 A student wrote: "{text}"
 
@@ -53,9 +55,11 @@ Format:
     return safe_generate(prompt)
 
 
-def ask_tutor(question: str, lesson_context: str = None, lang: str = "ru") -> str:
+def ask_tutor(question: str, lesson_context: str = None, lang: str = "tj") -> str:
     context = f"\nLesson context: {lesson_context}" if lesson_context else ""
     prompt = f"""
+IMPORTANT: Always respond with Tajik explanations. Never use Russian language.
+
 You are a friendly English language tutor for Tajik speakers.
 {context}
 
@@ -67,7 +71,7 @@ Answer clearly and simply. Use examples.
     return safe_generate(prompt)
 
 
-def analyze_screenshot(image_bytes: bytes, question: str = None, lang: str = "ru") -> str:
+def analyze_screenshot(image_bytes: bytes, question: str = None, lang: str = "tj") -> str:
     import PIL.Image
     import io
 
@@ -89,6 +93,8 @@ Use simple language. {_lang_instruction(lang)}
 
 def generate_quiz(lesson_content: str, lesson_title: str) -> list:
     prompt = f"""
+Generate questions in English. Keep questions educational and appropriate for language learners.
+
 You are creating a quiz for English learners based on this lesson.
 
 Lesson title: {lesson_title}
@@ -125,6 +131,8 @@ Return ONLY valid JSON array, no extra text:
 def generate_word_examples(word: str, translation: str) -> list:
     """Generate 3 contextual examples for a vocabulary word with Tajik translation"""
     prompt = f"""
+IMPORTANT: All Tajik translations must be in TAJIK language, NOT Russian. Never use Russian.
+
 For the English word "{word}" (Tajik: {translation}), give exactly 3 real-life usage examples.
 Return ONLY valid JSON array, no extra text:
 [
@@ -153,10 +161,12 @@ Keep sentences simple and practical. Tajik translation must be accurate.
 
 def get_weak_topic_advice(weak_topics: list) -> str:
     if not weak_topics:
-        return "Отлично! У тебя нет слабых тем. Продолжай в том же духе! 🎉"
+        return "Аъло! Ту мавзӯи заиф надорӣ. Ҳамин тавр давом деҳ! 🎉"
 
     topics_str = ", ".join(weak_topics)
     prompt = f"""
+Respond in TAJIK language only. Never use Russian.
+
 A student is learning English and struggling with these topics: {topics_str}
 
 Give them:
@@ -164,6 +174,6 @@ Give them:
 2. 2-3 specific tips to improve in these topics
 3. A simple practice exercise for the hardest topic
 
-Keep it friendly and motivating. Respond in Russian.
+Keep it friendly and motivating.
 """
     return safe_generate(prompt)
