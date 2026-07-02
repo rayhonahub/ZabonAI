@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Mic, Send } from "lucide-react";
+import { MessageCircle, Mic, Send, Volume2, VolumeX } from "lucide-react";
 import Navbar from "../components/Navbar";
 import NeuralBackground from "../components/NeuralBackground";
 import api from "../api/axios";
+
+function cleanForSpeech(text) {
+  return text
+    .replace(/\[.*?\]/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/#{1,6}\s/g, "")
+    .replace(/[•\-]\s/g, "")
+    .trim();
+}
 
 const SCENARIOS = [
   {
@@ -49,21 +58,53 @@ export default function ConversationPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [micActive, setMicActive] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(() => localStorage.getItem("tts_enabled") !== "false");
+  const [speakingIndex, setSpeakingIndex] = useState(null);
   const bottomRef = useRef(null);
+  const autoSendTimerRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    return () => window.speechSynthesis.cancel();
+  }, []);
+
+  function toggleTts() {
+    setTtsEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem("tts_enabled", String(next));
+      if (!next) window.speechSynthesis.cancel();
+      return next;
+    });
+  }
+
+  function speakResponse(text, index = null) {
+    const cleanText = cleanForSpeech(text);
+    if (!cleanText) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "en-US";
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.onstart = () => setSpeakingIndex(index);
+    utterance.onend = () => setSpeakingIndex(null);
+    utterance.onerror = () => setSpeakingIndex(null);
+    window.speechSynthesis.speak(utterance);
+  }
+
   function selectScenario(s) {
     setScenario(s);
     setMessages([{ role: "ai", text: s.welcome }]);
     setInput("");
+    if (ttsEnabled) speakResponse(s.welcome, 0);
   }
 
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
-    const userText = input.trim();
+  async function sendMessage(overrideText) {
+    const userText = (overrideText ?? input).trim();
+    if (!userText || loading) return;
+    clearTimeout(autoSendTimerRef.current);
     setInput("");
     const newMessages = [...messages, { role: "user", text: userText }];
     setMessages(newMessages);
@@ -79,12 +120,21 @@ export default function ConversationPage() {
         scenario: scenario.key,
         history: history.slice(0, -1),
       });
-      setMessages(prev => [...prev, { role: "ai", text: res.data.reply }]);
+      setMessages(prev => {
+        const updated = [...prev, { role: "ai", text: res.data.reply }];
+        if (ttsEnabled) speakResponse(res.data.reply, updated.length - 1);
+        return updated;
+      });
     } catch {
       setMessages(prev => [...prev, { role: "ai", text: "Хато рух дод. Лутфан боз кӯшиш кун." }]);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleInputChange(e) {
+    clearTimeout(autoSendTimerRef.current);
+    setInput(e.target.value);
   }
 
   function startMic() {
@@ -96,8 +146,11 @@ export default function ConversationPage() {
     recognition.interimResults = false;
     setMicActive(true);
     recognition.onresult = (e) => {
-      setInput(e.results[0][0].transcript);
+      const transcript = e.results[0][0].transcript;
+      setInput(transcript);
       setMicActive(false);
+      clearTimeout(autoSendTimerRef.current);
+      autoSendTimerRef.current = setTimeout(() => sendMessage(transcript), 1500);
     };
     recognition.onerror = () => setMicActive(false);
     recognition.onend = () => setMicActive(false);
@@ -115,14 +168,29 @@ export default function ConversationPage() {
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 16px 24px", position: "relative", zIndex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 64px)" }}>
 
           {/* Header */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <MessageCircle size={24} style={{ color: "#14B8A6" }} />
-              <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Суҳбат бо AI</h1>
+          <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <MessageCircle size={24} style={{ color: "#14B8A6" }} />
+                <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Суҳбат бо AI</h1>
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
+                Ба забони англисӣ суҳбат кун — AI хатоҳои граммативиро нишон медиҳад
+              </p>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
-              Ба забони англисӣ суҳбат кун — AI хатоҳои граммативиро нишон медиҳад
-            </p>
+            <button
+              onClick={toggleTts}
+              title={ttsEnabled ? "Хомӯш кардани садо" : "Фаъол кардани садо"}
+              style={{
+                width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                border: "1px solid rgba(45,212,191,0.25)",
+                background: ttsEnabled ? "rgba(20,184,166,0.12)" : "rgba(255,255,255,0.04)",
+                color: ttsEnabled ? "#2DD4BF" : "rgba(255,255,255,0.4)",
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              }}
+            >
+              {ttsEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
           </div>
 
           {/* Scenario selector */}
@@ -219,18 +287,32 @@ export default function ConversationPage() {
                 );
               }
               const { main, correction } = parseCorrectionFromReply(msg.text);
+              const isSpeaking = speakingIndex === i;
               return (
                 <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start", maxWidth: "78%" }}>
                   <div style={{
+                    position: "relative",
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "12px 12px 12px 2px",
-                    padding: "10px 14px",
+                    padding: "10px 26px 16px 14px",
                     fontSize: 14,
                     color: "rgba(255,255,255,0.9)",
                     lineHeight: 1.55,
                   }}>
                     {main}
+                    <button
+                      onClick={() => speakResponse(msg.text, i)}
+                      title="Гӯш кун"
+                      style={{
+                        position: "absolute", bottom: 6, right: 6,
+                        background: "none", border: "none", padding: 2, cursor: "pointer",
+                        color: "#2DD4BF", display: "flex",
+                        animation: isSpeaking ? "speaker-pulse 1s infinite" : "none",
+                      }}
+                    >
+                      <Volume2 size={14} />
+                    </button>
                   </div>
                   {correction && (
                     <div style={{
@@ -273,7 +355,7 @@ export default function ConversationPage() {
           }}>
             <input
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               disabled={!scenario || loading}
               placeholder={scenario ? "Ба англисӣ бинависед ё гап занед..." : "Аввал сенарияро интихоб кун"}
@@ -310,7 +392,7 @@ export default function ConversationPage() {
               <Mic size={18} />
             </button>
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || !scenario || loading}
               style={{
                 width: 44,
@@ -337,6 +419,10 @@ export default function ConversationPage() {
         @keyframes typing {
           0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes speaker-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
         }
       `}</style>
     </div>

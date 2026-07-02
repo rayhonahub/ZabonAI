@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem, BookOpen, Gamepad2, Puzzle, BarChart2, X, Swords, User, Sparkles } from "lucide-react";
+import { Flame, Gem, BookOpen, Gamepad2, Puzzle, BarChart2, X, Swords, User, Sparkles, Mic, MessageCircle } from "lucide-react";
 import api from "../api/axios";
 import { avatarUrl } from "../utils/avatar";
 
@@ -9,6 +9,8 @@ const links = [
   { to: "/duel", label: "Дуэл", Icon: Swords },
   { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
   { to: "/practice", label: "Машқ", Icon: Puzzle },
+  { to: "/pronunciation", label: "Талаффуз", Icon: Mic },
+  { to: "/conversation", label: "Чат", Icon: MessageCircle },
   { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
   { to: "/profile", label: "Профил", Icon: User },
 ];

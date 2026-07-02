@@ -22,6 +22,7 @@ import LeaderboardPage from "./pages/LeaderboardPage";
 import DuelPage from "./pages/DuelPage";
 import WritingPracticePage from "./pages/WritingPracticePage";
 import ConversationPage from "./pages/ConversationPage";
+import PronunciationPage from "./pages/PronunciationPage";
 
 export default function App() {
   const location = useLocation();
@@ -174,6 +175,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ConversationPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/pronunciation"
+            element={
+              <ProtectedRoute>
+                <PronunciationPage />
               </ProtectedRoute>
             }
           />
