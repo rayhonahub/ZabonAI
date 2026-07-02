@@ -278,6 +278,75 @@ All explanations MUST be in Tajik language.
         }
 
 
+@router.post("/pronunciation-check")
+def pronunciation_check(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    User speaks a word/sentence → Web Speech API transcribes it →
+    AI compares transcription with target and gives detailed feedback in Tajik
+    """
+    target_text = data.get("target_text", "")
+    user_said = data.get("user_said", "")
+
+    if not target_text or not user_said:
+        raise HTTPException(400, "Матн холӣ аст")
+
+    prompt = f"""
+You are an English pronunciation teacher for Tajik speakers.
+
+Target (correct): "{target_text}"
+Student said: "{user_said}"
+
+Analyze the pronunciation attempt and respond ONLY in Tajik language with this JSON:
+{{
+  "similarity_score": 85,
+  "is_correct": true,
+  "feedback_tj": "Талаффузи шумо хуб аст! Аммо ...",
+  "specific_errors": [
+    {{
+      "wrong": "what student said wrong",
+      "correct": "correct pronunciation",
+      "tip_tj": "маслиҳат ба тоҷикӣ"
+    }}
+  ],
+  "encouragement_tj": "сухани ташвиқӣ ба тоҷикӣ"
+}}
+
+If student said exactly the right thing: similarity_score=100, is_correct=true, specific_errors=[]
+IMPORTANT: All text in Tajik language only, no Russian.
+"""
+    try:
+        import json as json_lib
+        response = ai_service.model.generate_content(prompt)
+        text = response.text.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        result = json_lib.loads(text)
+
+        history = models.AIChatHistory(
+            user_id=current_user.id,
+            message=f"[PRONUNCIATION] target={target_text} said={user_said}",
+            response=json_lib.dumps(result, ensure_ascii=False),
+            chat_type="pronunciation"
+        )
+        db.add(history)
+        db.commit()
+        return result
+    except Exception:
+        return {
+            "similarity_score": 70,
+            "is_correct": False,
+            "feedback_tj": "Боз кӯшиш кунед! Суст-суст гӯед.",
+            "specific_errors": [],
+            "encouragement_tj": "Ташвиш нашавед, давом диҳед!"
+        }
+
+
 @router.post("/conversation")
 def ai_conversation(
     data: dict,
