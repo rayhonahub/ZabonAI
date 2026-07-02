@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Flame, BookOpen, BarChart2 } from "lucide-react";
+import { Star, Flame, BarChart2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { useCountUp } from "../hooks/useCountUp";
 import { usePageTitle } from "../hooks/usePageTitle";
 
-function levelFromXp(xp) {
-  if (xp >= 300) return { label: "Intermediate", sub: "Продвинутый", color: "text-primary font-bold" };
-  if (xp >= 100) return { label: "Elementary", sub: "Средний", color: "text-blue-600 font-bold" };
-  return { label: "Beginner", sub: "Начинающий", color: "text-emerald-600 font-bold" };
+const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
+
+function levelLabel(xp) {
+  if (xp >= 300) return "Болотар";
+  if (xp >= 100) return "Миёна";
+  return "Ибтидоӣ";
 }
 
 function ProgressRing({ percent }) {
@@ -26,38 +28,39 @@ function ProgressRing({ percent }) {
   const offset = circumference - (animatedPercent / 100) * circumference;
 
   return (
-    <div className="relative w-[120px] h-[120px] flex-shrink-0">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(109,79,240,0.1)" strokeWidth={stroke} />
+    <div style={{ position: "relative", width: 120, height: 120, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#6D4FF0"
+          stroke="#14B8A6"
           strokeWidth={stroke}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-[stroke-dashoffset] duration-1000 ease-out"
+          style={{ transition: "stroke-dashoffset 1s ease-out" }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-extrabold font-sora" style={{ color: '#1A1532' }}>{Math.round(animatedPercent)}%</span>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 22, fontWeight: 700, color: "white" }}>{Math.round(animatedPercent)}%</span>
       </div>
     </div>
   );
 }
 
-function StatCard({ Icon, iconColor, label, sub, value }) {
+function StatCard({ Icon, iconColor, label, value }) {
   return (
-    <div className="glass-card-light p-6 flex flex-col gap-1">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon size={16} style={{ color: iconColor }} />
-        <p className="text-xs font-bold uppercase" style={{ color: '#8A82AD' }}>{sub}</p>
+    <div className="glass-card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <Icon size={16} color={iconColor} />
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>
+          {label}
+        </p>
       </div>
-      <p className="text-sm" style={{ color: '#8A82AD' }}>{label}</p>
-      <p className="text-3xl font-extrabold font-sora mt-1" style={{ color: '#1A1532' }}>{value}</p>
+      <p style={{ color: "white", fontSize: 28, fontWeight: 500, margin: 0 }}>{value}</p>
     </div>
   );
 }
@@ -65,46 +68,69 @@ function StatCard({ Icon, iconColor, label, sub, value }) {
 function StreakCalendar({ streak }) {
   const days = [];
   const today = new Date();
-  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayLabels = ["Дш", "Сш", "Чш", "Пш", "Ҷм", "Шн", "Яш"];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const isActive = i < Math.min(streak, 7);
-    days.push({ date: d, isActive, label: dayLabels[(d.getDay() + 6) % 7] });
+    days.push({ date: d, isActive, isToday: i === 0, label: dayLabels[(d.getDay() + 6) % 7] });
   }
   return (
-    <div className="flex justify-between gap-2">
-      {days.map((d, idx) => (
-        <div key={idx} className="flex flex-col items-center gap-1.5">
-          <span className="text-[10px] font-semibold" style={{ color: '#8A82AD' }}>{d.label}</span>
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300`}
-            style={d.isActive
-              ? { background: '#10b981', color: 'white' }
-              : { background: 'rgba(109,79,240,0.08)', color: 'transparent' }
-            }
-          >
-            {d.isActive && <Flame size={14} color="white" />}
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+      {days.map((d, idx) => {
+        let circleStyle;
+        if (d.isToday) {
+          circleStyle = { background: "transparent", border: "2px solid #2DD4BF", color: d.isActive ? "#2DD4BF" : "rgba(255,255,255,0.3)" };
+        } else if (d.isActive) {
+          circleStyle = { background: "#14B8A6", color: "#04231F" };
+        } else {
+          circleStyle = { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)" };
+        }
+        return (
+          <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600 }}>{d.label}</span>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                transition: "all 0.3s",
+                ...circleStyle,
+              }}
+            >
+              {d.isActive && <Flame size={14} color={circleStyle.color} />}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function ScoreBars({ entries }) {
+function scoreColor(score) {
+  if (score >= 80) return "#14B8A6";
+  if (score >= 60) return "#FBBF24";
+  return "#EF4444";
+}
+
+function QuizScoreList({ entries }) {
   if (entries.length === 0) {
-    return <p className="text-sm" style={{ color: '#8A82AD' }}>No quiz scores yet / Пока нет результатов тестов</p>;
+    return <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Ҳоло тест нагузаштед</p>;
   }
   return (
-    <div className="flex items-end gap-2 h-32">
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {entries.map((e, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
-          <span className="text-[10px] font-semibold" style={{ color: '#8A82AD' }}>{Math.round(e.score)}%</span>
-          <div
-            className="w-full rounded-t-md transition-all duration-700 ease-out"
-            style={{ height: `${Math.max(4, e.score)}%`, background: e.score >= 60 ? '#10b981' : '#f43f5e' }}
-          />
+        <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <span style={{ color: "white", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {e.lesson_title || "Дарс"}
+          </span>
+          <span style={{ color: scoreColor(e.score), fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+            {Math.round(e.score)}%
+          </span>
         </div>
       ))}
     </div>
@@ -112,7 +138,7 @@ function ScoreBars({ entries }) {
 }
 
 export default function ProgressPage() {
-  usePageTitle("Progress");
+  usePageTitle("Пешрафт");
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [lessonsProgress, setLessonsProgress] = useState([]);
@@ -136,7 +162,7 @@ export default function ProgressPage() {
       const res = await api.get("/ai/weak-topics-advice");
       setAdvice(res.data.advice);
     } catch {
-      setAdvice("Could not load advice right now / Не удалось загрузить совет");
+      setAdvice("Ҳоло маслиҳатро гирифта натавонистем");
     } finally {
       setAdviceLoading(false);
     }
@@ -146,7 +172,7 @@ export default function ProgressPage() {
   const xp = (summary?.completed_lessons ?? 0) * 10 + quizzesPassed * 20;
   const animatedXp = useCountUp(xp);
   const animatedCompleted = useCountUp(summary?.completed_lessons ?? 0);
-  const level = levelFromXp(xp);
+  const level = levelLabel(xp);
 
   const completionPercent = summary?.total_lessons
     ? (summary.completed_lessons / summary.total_lessons) * 100
@@ -158,96 +184,136 @@ export default function ProgressPage() {
   );
 
   return (
-    <div className="min-h-screen page-enter" style={{ background: '#F4F1FF' }}>
+    <div style={{ minHeight: "100vh", background: BG, color: "white" }}>
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold font-sora mb-1" style={{ color: '#1A1532' }}>Your Progress</h1>
-            <p style={{ color: '#8A82AD' }}>Твой прогресс</p>
-          </div>
-          <span className={`text-sm px-4 py-2 rounded-full border border-primary/20 bg-primary/8 ${level.color}`}>
-            {level.label} <span className="opacity-70">/ {level.sub}</span>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 32 }}>
+          <h1 style={{ color: "white", fontSize: 28, fontWeight: 500, margin: 0 }}>Пешрафти ман</h1>
+          <span
+            style={{
+              fontSize: 14,
+              padding: "6px 14px",
+              borderRadius: 6,
+              background: "rgba(45,212,191,0.1)",
+              border: "1px solid rgba(45,212,191,0.3)",
+              color: "#2DD4BF",
+              fontWeight: 600,
+            }}
+          >
+            {level}
           </span>
         </div>
 
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 40 }}>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: 'rgba(109,79,240,0.08)' }} />
+              <div key={i} className="glass-card" style={{ height: 128 }} />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-[auto_1fr_1fr_1fr] gap-5 mb-8 animate-fade-in items-stretch">
-              <div className="glass-card-light p-6 flex items-center gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 32 }}>
+              <div className="glass-card" style={{ padding: "1.5rem", display: "flex", alignItems: "center", gap: 16 }}>
                 <ProgressRing percent={completionPercent} />
                 <div>
-                  <p className="text-xs font-bold uppercase" style={{ color: '#8A82AD' }}>Completion</p>
-                  <p className="text-sm" style={{ color: '#8A82AD' }}>Завершено</p>
-                  <p className="text-sm font-semibold mt-1" style={{ color: '#1A1532' }}>
-                    {animatedCompleted}/{summary?.total_lessons ?? 0} lessons
+                  <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>
+                    АНҶОМШУДА
+                  </p>
+                  <p style={{ color: "white", fontSize: 16, fontWeight: 600, marginTop: 6 }}>
+                    {animatedCompleted}/{summary?.total_lessons ?? 0} дарс
                   </p>
                 </div>
               </div>
-              <StatCard Icon={Star} iconColor="#f0a500" label="XP points" sub="Очки опыта" value={`${animatedXp}`} />
-              <StatCard Icon={BarChart2} iconColor="#10b981" label="Average score" sub="Средний балл" value={`${summary?.average_score ?? 0}%`} />
-              <StatCard Icon={Flame} iconColor="#FF5C8A" label="Current streak" sub="Текущая серия" value={`${summary?.streak ?? 0}`} />
+              <StatCard Icon={Star} iconColor="#FBBF24" label="Холҳои XP" value={`${animatedXp}`} />
+              <StatCard Icon={BarChart2} iconColor="#14B8A6" label="Миёнаи натиҷа" value={`${summary?.average_score ?? 0}%`} />
+              <StatCard Icon={Flame} iconColor="#FF5C8A" label="Силсилаи имрӯза" value={`${summary?.streak ?? 0}`} />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-5 mb-8">
-              <div className="glass-card-light p-6">
-                <h2 className="text-sm font-bold mb-1" style={{ color: '#1A1532' }}>Last 7 days</h2>
-                <p className="text-xs mb-4" style={{ color: '#8A82AD' }}>Последние 7 дней</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 32 }}>
+              <div className="glass-card" style={{ padding: "1.5rem" }}>
+                <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 16px" }}>7 рӯзи охир</h2>
                 <StreakCalendar streak={summary?.streak ?? 0} />
               </div>
 
-              <div className="glass-card-light p-6">
-                <h2 className="text-sm font-bold mb-1" style={{ color: '#1A1532' }}>Quiz scores</h2>
-                <p className="text-xs mb-4" style={{ color: '#8A82AD' }}>Результаты тестов</p>
-                <ScoreBars entries={scoreEntries} />
+              <div className="glass-card" style={{ padding: "1.5rem" }}>
+                <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 16px" }}>Натиҷаи тестҳо</h2>
+                <QuizScoreList entries={scoreEntries} />
               </div>
             </div>
           </>
         )}
 
-        <div className="glass-card-light p-6 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-lg font-bold font-sora" style={{ color: '#1A1532' }}>Weak topics</h2>
-              <p className="text-sm" style={{ color: '#8A82AD' }}>Слабые темы</p>
-            </div>
+        <div className="glass-card" style={{ padding: "1.75rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
+            <h2 style={{ color: "white", fontSize: 18, fontWeight: 600, margin: 0 }}>Мавзӯъҳои заиф</h2>
             <button
               onClick={getAdvice}
               disabled={adviceLoading}
-              className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0"
-              style={{ background: 'linear-gradient(135deg, #6D4FF0, #9B7AFF)', boxShadow: '0 4px 12px rgba(109,79,240,0.2)' }}
+              style={{
+                padding: "10px 20px",
+                borderRadius: 6,
+                fontWeight: 600,
+                fontSize: 14,
+                background: "#FBBF24",
+                color: "#04231F",
+                border: "none",
+                cursor: adviceLoading ? "default" : "pointer",
+                opacity: adviceLoading ? 0.6 : 1,
+                transition: "opacity 0.2s",
+              }}
             >
-              {adviceLoading ? "Thinking..." : "Get AI Advice / Совет от AI"}
+              {adviceLoading ? "Тайёр мешавад..." : "Маслиҳати AI"}
             </button>
           </div>
 
           {!loading && (!summary?.weak_topic_lessons || summary.weak_topic_lessons.length === 0) && (
-            <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: '#059669', background: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' }}>
-              No weak topics — great job! 🎉 / Слабых тем нет — отличная работа!
+            <p
+              style={{
+                fontSize: 14,
+                borderRadius: 6,
+                padding: "12px 16px",
+                background: "rgba(20,184,166,0.08)",
+                border: "1px solid rgba(20,184,166,0.3)",
+                color: "#2DD4BF",
+                margin: 0,
+              }}
+            >
+              Аъло! Мавзӯи заиф надорӣ!
             </p>
           )}
 
           {summary?.weak_topic_lessons?.length > 0 && (
-            <div className="grid sm:grid-cols-2 gap-3 mb-2">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginBottom: 8 }}>
               {summary.weak_topic_lessons.map((wt) => (
                 <div
                   key={wt.lesson_id}
-                  className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
-                  style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.15)' }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    borderRadius: 6,
+                    padding: "12px 16px",
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.25)",
+                  }}
                 >
-                  <span className="text-sm font-medium" style={{ color: '#e11d48' }}>{wt.title}</span>
+                  <span style={{ color: "#EF4444", fontSize: 14, fontWeight: 500 }}>{wt.title}</span>
                   <button
                     onClick={() => navigate(`/quiz/${wt.lesson_id}`)}
-                    className="text-xs font-bold text-white px-3 py-1.5 rounded-full transition-colors duration-150 flex-shrink-0 hover:opacity-90"
-                    style={{ background: '#f43f5e' }}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#04231F",
+                      background: "#EF4444",
+                      border: "none",
+                      borderRadius: 999,
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
                   >
-                    Practice →
+                    Машқ кун →
                   </button>
                 </div>
               ))}
@@ -255,7 +321,19 @@ export default function ProgressPage() {
           )}
 
           {advice && (
-            <div className="mt-5 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap animate-slide-up" style={{ background: 'rgba(109,79,240,0.05)', border: '1px solid rgba(109,79,240,0.1)', color: '#534A7A' }}>
+            <div
+              style={{
+                marginTop: 20,
+                borderRadius: 6,
+                padding: "1.25rem",
+                fontSize: 14,
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(45,212,191,0.15)",
+                color: "rgba(255,255,255,0.85)",
+              }}
+            >
               {advice}
             </div>
           )}
