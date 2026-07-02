@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Swords, Trophy, RefreshCw, Users, Plus, LogIn, Clock,
+  Swords, Trophy, Handshake, RefreshCw, Users, Plus, LogIn, Gift,
   AlertCircle, Share2, PlayCircle, Play,
 } from "lucide-react";
 import api from "../api/axios";
@@ -9,7 +9,7 @@ import NeuralBackground from "../components/NeuralBackground";
 import Navbar from "../components/Navbar";
 
 const WS_BASE = "ws://localhost:8000";
-const QUESTION_SECONDS = 30;
+const QUESTION_SECONDS = 20;
 
 export default function DuelPage() {
   const navigate = useNavigate();
@@ -21,36 +21,46 @@ export default function DuelPage() {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [error, setError] = useState("");
 
+  // Current user identity (fetched from the backend — never trust localStorage for this)
+  const [me, setMe] = useState(null);
+  const [meLoading, setMeLoading] = useState(true);
+
   // Game state
   const [myId, setMyId] = useState(null);
   const [players, setPlayers] = useState({});
   const [scores, setScores] = useState({});
   const [question, setQuestion] = useState(null);
   const [questionNumber, setQuestionNumber] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(10);
+  const [totalQuestions, setTotalQuestions] = useState(5);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [opponentAnswered, setOpponentAnswered] = useState(false);
+  const [roundResult, setRoundResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
 
   // Result state
-  const [result, setResult] = useState(null); // { scores, playerNames, winnerId, winnerName }
+  const [result, setResult] = useState(null); // { scores, playerNames, winnerId, winnerName, isTie, reward, opponentLeft }
 
   // Solo test mode state
   const [soloMode, setSoloMode] = useState(false);
   const [soloQuestions, setSoloQuestions] = useState([]);
   const [soloCurrentIndex, setSoloCurrentIndex] = useState(0);
   const [soloSelectedAnswer, setSoloSelectedAnswer] = useState(null);
-  const [soloAnswerChecked, setSoloAnswerChecked] = useState(false);
   const [soloScore, setSoloScore] = useState(0);
   const [soloFinished, setSoloFinished] = useState(false);
   const [soloLoading, setSoloLoading] = useState(false);
 
   const timerRef = useRef(null);
 
-  const me = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = me.id || 1;
-  const userName = encodeURIComponent(me.full_name || "Корбар");
+  const userId = me ? String(me.id) : null;
+  const userName = me?.full_name || "Бозингар";
+
+  useEffect(() => {
+    api.get("/profile/me")
+      .then((res) => setMe(res.data))
+      .catch(() => setError("Профили шумо бор нашуд. Саҳифаро аз нав кушоед."))
+      .finally(() => setMeLoading(false));
+  }, []);
 
   // Fetch available rooms on lobby load
   useEffect(() => {
@@ -60,6 +70,11 @@ export default function DuelPage() {
       return () => clearInterval(interval);
     }
   }, [screen]);
+
+  useEffect(() => () => {
+    clearTimer();
+    if (wsRef.current) wsRef.current.close();
+  }, []);
 
   function fetchRooms() {
     api.get("/duel/rooms").then((r) => setAvailableRooms(r.data)).catch(() => {});
@@ -76,10 +91,9 @@ export default function DuelPage() {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearTimer();
-          // Auto-submit blank if not answered
           setAnswered((prev) => {
-            if (!prev && wsRef.current) {
-              wsRef.current.send(JSON.stringify({ type: "answer", answer: "__timeout__" }));
+            if (!prev && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: "answer", answer: "" }));
             }
             return true;
           });
@@ -91,186 +105,156 @@ export default function DuelPage() {
   }
 
   const fallbackSoloQuestions = [
-    {
-      id: 1,
-      question: "What is the correct form of 'to be' for 'I'?",
-      option_a: "I is",
-      option_b: "I am",
-      option_c: "I are",
-      option_d: "I be",
-      correct_answer: "b",
-    },
-    {
-      id: 2,
-      question: "Choose the correct sentence:",
-      option_a: "She go to school",
-      option_b: "She goes to school",
-      option_c: "She going to school",
-      option_d: "She gone to school",
-      correct_answer: "b",
-    },
-    {
-      id: 3,
-      question: "What does 'apple' mean in Tajik?",
-      option_a: "китоб",
-      option_b: "хона",
-      option_c: "себ",
-      option_d: "об",
-      correct_answer: "c",
-    },
-    {
-      id: 4,
-      question: "Choose the correct past tense:",
-      option_a: "Yesterday I go",
-      option_b: "Yesterday I goes",
-      option_c: "Yesterday I went",
-      option_d: "Yesterday I going",
-      correct_answer: "c",
-    },
-    {
-      id: 5,
-      question: "What is 'kitob' in English?",
-      option_a: "water",
-      option_b: "book",
-      option_c: "house",
-      option_d: "friend",
-      correct_answer: "b",
-    },
+    { id: 1, question: "What is the correct form of 'to be' for 'I'?", option_a: "I is", option_b: "I am", option_c: "I are", option_d: "I be", correct_answer: "b" },
+    { id: 2, question: "Choose the correct sentence:", option_a: "She go to school", option_b: "She goes to school", option_c: "She going to school", option_d: "She gone to school", correct_answer: "b" },
+    { id: 3, question: "What does 'apple' mean in Tajik?", option_a: "китоб", option_b: "хона", option_c: "себ", option_d: "об", correct_answer: "c" },
+    { id: 4, question: "Choose the correct past tense:", option_a: "Yesterday I go", option_b: "Yesterday I goes", option_c: "Yesterday I went", option_d: "Yesterday I going", correct_answer: "c" },
+    { id: 5, question: "What is 'kitob' in English?", option_a: "water", option_b: "book", option_c: "house", option_d: "friend", correct_answer: "b" },
   ];
 
-  // Start solo test
   async function startSoloTest() {
     setError("");
     setSoloLoading(true);
     try {
       const res = await api.get("/quiz/daily-challenge");
-      setSoloQuestions(res.data);
-    } catch (err) {
-      // If daily challenge fails, use hardcoded questions
+      setSoloQuestions(Array.isArray(res.data) && res.data.length ? res.data : fallbackSoloQuestions);
+    } catch {
       setSoloQuestions(fallbackSoloQuestions);
     }
     setSoloCurrentIndex(0);
     setSoloSelectedAnswer(null);
-    setSoloAnswerChecked(false);
     setSoloScore(0);
     setSoloFinished(false);
     setSoloMode(true);
     setSoloLoading(false);
   }
 
-  // Handle answer selection
   function handleSoloAnswer(answer) {
-    if (soloAnswerChecked) return; // Already answered this question
-    setSoloSelectedAnswer(answer); // just select, don't check yet
+    if (soloFinished) return;
+    setSoloSelectedAnswer(answer);
   }
 
-  // Check answer and move forward
   function handleSoloNext() {
-    if (!soloSelectedAnswer) return; // No answer selected yet
-
+    if (!soloSelectedAnswer) return;
     const currentQ = soloQuestions[soloCurrentIndex];
     const isCorrect = soloSelectedAnswer.toLowerCase() === currentQ.correct_answer.toLowerCase();
+    if (isCorrect) setSoloScore((prev) => prev + 1);
 
-    if (isCorrect) {
-      setSoloScore((prev) => prev + 1);
-    }
-
-    // Move to next question or finish
     if (soloCurrentIndex + 1 >= soloQuestions.length) {
       setSoloFinished(true);
     } else {
       setSoloCurrentIndex((prev) => prev + 1);
       setSoloSelectedAnswer(null);
-      setSoloAnswerChecked(false);
     }
   }
 
   const connectWS = useCallback((roomId) => {
-    const ws = new WebSocket(`${WS_BASE}/duel/ws/${roomId}/${userId}/${userName}`);
+    if (!userId) return;
+    const ws = new WebSocket(`${WS_BASE}/duel/ws/${roomId}/${userId}/${encodeURIComponent(userName)}`);
     wsRef.current = ws;
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
 
-      if (msg.type === "error") {
-        setError(msg.message);
-        setScreen("lobby");
-      } else if (msg.type === "joined") {
-        setMyId(msg.your_id);
-        setRoomCode(msg.room_id);
-        if (msg.player_count < 2) setScreen("waiting");
-      } else if (msg.type === "waiting") {
-        setScreen("waiting");
-      } else if (msg.type === "duel_start") {
-        setPlayers(msg.players);
-        setScores(Object.fromEntries(Object.keys(msg.players).map((k) => [k, 0])));
-        setTotalQuestions(msg.total_questions);
-        setScreen("game");
-      } else if (msg.type === "question") {
-        setQuestion(msg);
-        setQuestionNumber(msg.question_number);
-        setSelected(null);
-        setAnswered(false);
-        setOpponentAnswered(false);
-        startTimer();
-      } else if (msg.type === "player_answered") {
-        if (msg.player_id !== String(myId)) {
-          setOpponentAnswered(true);
-        }
-        if (msg.correct && msg.player_id) {
-          setScores((prev) => ({
-            ...prev,
-            [msg.player_id]: (prev[msg.player_id] || 0) + 1,
-          }));
-        }
-      } else if (msg.type === "duel_end") {
-        clearTimer();
-        setResult({
-          scores: msg.scores,
-          playerNames: msg.player_names,
-          winnerId: msg.winner_id,
-          winnerName: msg.winner_name,
-        });
-        setScreen("result");
-      } else if (msg.type === "opponent_left") {
-        clearTimer();
-        setError("Рақиб бозиро тарк кард");
-        setScreen("lobby");
+      switch (msg.type) {
+        case "error":
+          setError(msg.message);
+          setScreen("lobby");
+          break;
+        case "joined":
+          setMyId(msg.your_id);
+          setRoomCode(msg.room_id);
+          break;
+        case "waiting":
+          setScreen("waiting");
+          break;
+        case "duel_start":
+          setPlayers(msg.players || {});
+          setScores(Object.fromEntries(Object.keys(msg.players || {}).map((k) => [k, 0])));
+          setTotalQuestions(msg.total_questions || 5);
+          setScreen("game");
+          break;
+        case "question":
+          setQuestion(msg);
+          setQuestionNumber(msg.question_number);
+          setSelected(null);
+          setAnswered(false);
+          setOpponentAnswered(false);
+          setRoundResult(null);
+          startTimer();
+          break;
+        case "player_answered":
+          setScores(msg.scores || {});
+          if (String(msg.player_id) !== String(userId)) {
+            setOpponentAnswered(true);
+          }
+          break;
+        case "round_result":
+          clearTimer();
+          setRoundResult(msg);
+          setScores(msg.scores || {});
+          break;
+        case "duel_end":
+          clearTimer();
+          setResult({
+            scores: msg.scores,
+            playerNames: msg.player_names,
+            winnerId: msg.winner_id,
+            winnerName: msg.winner_name,
+            isTie: msg.is_tie,
+            reward: msg.reward,
+          });
+          setScreen("result");
+          break;
+        case "opponent_left":
+          clearTimer();
+          setResult({
+            scores: msg.scores,
+            playerNames: msg.player_names,
+            winnerId: msg.winner_id,
+            winnerName: msg.winner_name,
+            isTie: false,
+            reward: msg.reward,
+            opponentLeft: true,
+          });
+          setScreen("result");
+          break;
+        case "ping":
+          break;
+        default:
+          break;
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    ws.onerror = () => {
       setError("Пайвасти WebSocket хато дод. Backend кор мекунад?");
       setScreen("lobby");
     };
-
-    ws.onclose = (event) => {
-      if (event.code !== 1000) {
-        setError("Пайваст қатъ шуд. Боз кӯшиш кун.");
-        setScreen("lobby");
-      }
-    };
-  }, [userId, userName, myId, screen]);
+  }, [userId, userName]);
 
   function handleCreate() {
+    if (!userId) return;
     setError("");
     api.post("/duel/create").then((r) => {
-      const roomId = r.data.room_id;
-      setRoomCode(roomId);
-      connectWS(roomId);
+      setRoomCode(r.data.room_id);
+      setTotalQuestions(r.data.total_questions || 5);
+      connectWS(r.data.room_id);
+      setScreen("waiting");
     }).catch(() => setError("Хонаро сохтан нашуд"));
   }
 
   function handleJoin(code) {
+    if (!userId) return;
     const id = (code || joinCode).trim().toUpperCase();
     if (!id) return;
     setError("");
-    connectWS(id);
+    api.get(`/duel/room/${id}`)
+      .then(() => connectWS(id))
+      .catch(() => setError("Хона ёфт нашуд"));
   }
 
   function handleAnswer(opt) {
-    if (answered || !wsRef.current) return;
+    if (answered || !wsRef.current || !question) return;
     setSelected(opt);
     setAnswered(true);
     clearTimer();
@@ -279,10 +263,12 @@ export default function DuelPage() {
 
   function handleRestart() {
     if (wsRef.current) wsRef.current.close();
+    clearTimer();
     setScreen("lobby");
     setRoomCode("");
     setJoinCode("");
     setQuestion(null);
+    setRoundResult(null);
     setResult(null);
     setError("");
     setScores({});
@@ -292,19 +278,14 @@ export default function DuelPage() {
     setSoloQuestions([]);
     setSoloCurrentIndex(0);
     setSoloSelectedAnswer(null);
-    setSoloAnswerChecked(false);
     setSoloScore(0);
     setSoloFinished(false);
+    fetchRooms();
   }
-
-  useEffect(() => () => {
-    clearTimer();
-    if (wsRef.current) wsRef.current.close();
-  }, []);
 
   const myIdStr = String(myId);
   const opponentId = Object.keys(players).find((k) => k !== myIdStr);
-  const myName = players[myIdStr] || me.full_name || "Ман";
+  const myName = players[myIdStr] || userName;
   const opponentName = players[opponentId] || "Рақиб";
   const myScore = scores[myIdStr] || 0;
   const opponentScore = scores[opponentId] || 0;
@@ -313,7 +294,7 @@ export default function DuelPage() {
   const optionKeys = ["option_a", "option_b", "option_c", "option_d"];
 
   const timerPct = (timeLeft / QUESTION_SECONDS) * 100;
-  const timerColor = timeLeft > 10 ? "#14B8A6" : "#FBBF24";
+  const timerColor = timeLeft > 6 ? "#14B8A6" : "#FBBF24";
 
   // ─── SOLO TEST ───────────────────────────────────────────────────────
   if (soloMode && !soloFinished && soloQuestions.length > 0) {
@@ -327,8 +308,6 @@ export default function DuelPage() {
 
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C, #0A2A2E, #0E3A3F)", padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
-
-        {/* Header */}
         <div style={{ width: "100%", maxWidth: 700, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <button
             onClick={() => { setSoloMode(false); setSoloFinished(false); }}
@@ -345,19 +324,16 @@ export default function DuelPage() {
           </div>
         </div>
 
-        {/* Progress bar */}
         <div style={{ width: "100%", maxWidth: 700, height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, marginBottom: "2rem" }}>
           <div style={{ width: `${(soloCurrentIndex / soloQuestions.length) * 100}%`, height: "100%", background: "#14B8A6", borderRadius: 2, transition: "width 0.3s ease" }} />
         </div>
 
-        {/* Question card */}
         <div style={{ width: "100%", maxWidth: 700, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(45,212,191,0.15)", borderRadius: 6, padding: "32px", marginBottom: "1.5rem", textAlign: "center" }}>
           <p style={{ color: "white", fontSize: 20, fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
             {currentQ.question}
           </p>
         </div>
 
-        {/* Answer options */}
         <div style={{ width: "100%", maxWidth: 700, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1.5rem" }}>
           {options.map((opt) => {
             const isSelected = soloSelectedAnswer === opt.key;
@@ -396,7 +372,6 @@ export default function DuelPage() {
           })}
         </div>
 
-        {/* Next button — only active when answer selected */}
         <button
           onClick={handleSoloNext}
           disabled={!soloSelectedAnswer}
@@ -460,7 +435,6 @@ export default function DuelPage() {
         <NeuralBackground />
         <Navbar />
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1rem" }}>
-          {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -520,7 +494,6 @@ export default function DuelPage() {
           )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
-            {/* Create Room */}
             <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, textAlign: "center" }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 10,
@@ -535,17 +508,18 @@ export default function DuelPage() {
               </p>
               <button
                 onClick={handleCreate}
+                disabled={meLoading}
                 style={{
                   width: "100%", padding: "0.65rem", borderRadius: 8, border: "none",
                   background: "linear-gradient(135deg, #0D9488, #14B8A6)",
-                  color: "white", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer",
+                  color: "white", fontWeight: 600, fontSize: "0.9rem",
+                  cursor: meLoading ? "default" : "pointer", opacity: meLoading ? 0.6 : 1,
                 }}
               >
                 Созед
               </button>
             </div>
 
-            {/* Join Room */}
             <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, textAlign: "center" }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 10,
@@ -572,17 +546,18 @@ export default function DuelPage() {
               />
               <button
                 onClick={() => handleJoin()}
+                disabled={meLoading}
                 style={{
                   width: "100%", padding: "0.65rem", borderRadius: 8, border: "none",
                   background: "linear-gradient(135deg, #B45309, #FBBF24)",
-                  color: "white", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer",
+                  color: "white", fontWeight: 600, fontSize: "0.9rem",
+                  cursor: meLoading ? "default" : "pointer", opacity: meLoading ? 0.6 : 1,
                 }}
               >
                 Пайваст шудан
               </button>
             </div>
 
-            {/* Solo Test Mode */}
             <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, textAlign: "center" }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 10,
@@ -610,7 +585,6 @@ export default function DuelPage() {
             </div>
           </div>
 
-          {/* Available Rooms */}
           {availableRooms.length > 0 && (
             <div>
               <h3 style={{ fontSize: "0.95rem", fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: "0.75rem" }}>
@@ -635,10 +609,11 @@ export default function DuelPage() {
                     </span>
                     <button
                       onClick={() => handleJoin(room.room_id)}
+                      disabled={meLoading}
                       style={{
                         padding: "0.4rem 0.9rem", borderRadius: 6, border: "1px solid rgba(20,184,166,0.3)",
                         background: "rgba(20,184,166,0.08)", color: "#14B8A6",
-                        fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
+                        fontSize: "0.82rem", fontWeight: 600, cursor: meLoading ? "default" : "pointer",
                       }}
                     >
                       Ворид шудан
@@ -649,7 +624,6 @@ export default function DuelPage() {
             </div>
           )}
 
-          {/* How to play instructions */}
           <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, marginTop: "2rem" }}>
             <h3 style={{ margin: "0 0 1.25rem", fontSize: "1rem", fontWeight: 600, textAlign: "center" }}>
               Чӣ тавр бозӣ кард?
@@ -751,12 +725,13 @@ export default function DuelPage() {
   if (screen === "game") {
     const circumference = 2 * Math.PI * 20;
     const strokeOffset = circumference - (timerPct / 100) * circumference;
+    const correctAns = roundResult?.correct_answer;
+    const myAnswer = roundResult?.answers?.[myIdStr]?.answer;
 
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C 0%, #0A2A2E 100%)", color: "white" }}>
         <NeuralBackground />
 
-        {/* Top scoreboard */}
         <div style={{
           position: "sticky", top: 0, zIndex: 30,
           background: "rgba(6,26,28,0.85)", backdropFilter: "blur(12px)",
@@ -787,7 +762,6 @@ export default function DuelPage() {
         </div>
 
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1rem" }}>
-          {/* Timer ring */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
             <div style={{ position: "relative", width: 56, height: 56 }}>
               <svg width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
@@ -810,7 +784,6 @@ export default function DuelPage() {
             </div>
           </div>
 
-          {/* Question card */}
           {question && (
             <div className="glass-card" style={{ padding: "2rem", borderRadius: 16, marginBottom: "1.25rem" }}>
               <p style={{ fontSize: "1.15rem", fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
@@ -819,7 +792,6 @@ export default function DuelPage() {
             </div>
           )}
 
-          {/* Answer buttons */}
           {question && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
               {optionKeys.map((key, i) => {
@@ -827,16 +799,17 @@ export default function DuelPage() {
                 if (!val) return null;
                 const label = optionLabels[i];
                 const isSelected = selected === label;
-                const isCorrect = answered && label === question.correct_answer;
-                const isWrong = answered && isSelected && !isCorrect;
+                const isRevealCorrect = !!roundResult && label === correctAns;
+                const isRevealWrong = !!roundResult && label === myAnswer && label !== correctAns;
 
                 let bg = "rgba(255,255,255,0.04)";
                 let border = "1.5px solid rgba(255,255,255,0.1)";
                 let color = "rgba(255,255,255,0.85)";
 
-                if (isCorrect) { bg = "rgba(20,184,166,0.18)"; border = "1.5px solid #14B8A6"; color = "#14B8A6"; }
-                else if (isWrong) { bg = "rgba(251,191,36,0.12)"; border = "1.5px solid #FBBF24"; color = "#FBBF24"; }
-                else if (isSelected) { bg = "rgba(20,184,166,0.08)"; border = "1.5px solid rgba(20,184,166,0.4)"; }
+                if (isRevealCorrect) { bg = "rgba(20,184,166,0.18)"; border = "1.5px solid #14B8A6"; color = "#14B8A6"; }
+                else if (isRevealWrong) { bg = "rgba(251,191,36,0.12)"; border = "1.5px solid #FBBF24"; color = "#FBBF24"; }
+                else if (!roundResult && isSelected) { bg = "rgba(20,184,166,0.08)"; border = "1.5px solid rgba(20,184,166,0.4)"; }
+                else if (roundResult) { color = "rgba(255,255,255,0.35)"; }
 
                 return (
                   <button
@@ -854,7 +827,7 @@ export default function DuelPage() {
                   >
                     <span style={{
                       minWidth: 26, height: 26, borderRadius: 6,
-                      background: isCorrect ? "rgba(20,184,166,0.2)" : isWrong ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.06)",
+                      background: isRevealCorrect ? "rgba(20,184,166,0.2)" : isRevealWrong ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.06)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontWeight: 700, fontSize: "0.8rem", color: "inherit",
                     }}>
@@ -867,18 +840,22 @@ export default function DuelPage() {
             </div>
           )}
 
-          {/* Opponent indicator */}
-          {opponentAnswered && !answered && (
+          {roundResult && (
+            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "0.82rem", marginTop: "1rem" }}>
+              Саволи навбатӣ...
+            </p>
+          )}
+          {!roundResult && opponentAnswered && !answered && (
             <p style={{ textAlign: "center", color: "#FBBF24", fontSize: "0.85rem", marginTop: "1rem" }}>
               Рақиб ҷавоб дод ✓
             </p>
           )}
-          {answered && opponentAnswered && (
+          {!roundResult && answered && opponentAnswered && (
             <p style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "0.82rem", marginTop: "1rem" }}>
-              Мунтазири саволи навбатӣ...
+              Мунтазири натиҷа...
             </p>
           )}
-          {answered && !opponentAnswered && (
+          {!roundResult && answered && !opponentAnswered && (
             <p style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "0.82rem", marginTop: "1rem" }}>
               Мунтазири рақиб...
             </p>
@@ -890,9 +867,11 @@ export default function DuelPage() {
 
   // ─── RESULT ───────────────────────────────────────────────────────────
   if (screen === "result" && result) {
-    const iWon = result.winnerId === myIdStr;
-    const myFinalScore = result.scores[myIdStr] || 0;
-    const opponentFinalScore = result.scores[opponentId] || 0;
+    const iWon = String(result.winnerId) === myIdStr;
+    const isTie = !!result.isTie;
+    const myFinalScore = result.scores?.[myIdStr] || 0;
+    const opponentFinalScore = result.scores?.[opponentId] || 0;
+    const iEarnedReward = isTie || iWon;
 
     return (
       <div style={{ minHeight: "100vh", background: "#061A1C", color: "white" }}>
@@ -903,7 +882,21 @@ export default function DuelPage() {
           justifyContent: "center", minHeight: "calc(100vh - 64px)", padding: "2rem",
         }}>
           <div className="glass-card" style={{ padding: "2.5rem", borderRadius: 20, textAlign: "center", maxWidth: 480, width: "100%" }}>
-            {iWon ? (
+            {isTie ? (
+              <>
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20, margin: "0 auto 1rem",
+                  background: "rgba(251,191,36,0.1)", border: "1.5px solid rgba(251,191,36,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Handshake size={36} color="#FBBF24" />
+                </div>
+                <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#FBBF24", margin: "0 0 0.5rem" }}>
+                  Баробар шуд!
+                </h2>
+                <p style={{ color: "rgba(255,255,255,0.45)", margin: "0 0 1.5rem" }}>Ҳарду хуб бозӣ кардед!</p>
+              </>
+            ) : iWon ? (
               <>
                 <div style={{
                   width: 72, height: 72, borderRadius: 20, margin: "0 auto 1rem",
@@ -916,6 +909,9 @@ export default function DuelPage() {
                 <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#14B8A6", margin: "0 0 0.5rem" }}>
                   Ту ғалаба кардӣ!
                 </h2>
+                {result.opponentLeft && (
+                  <p style={{ color: "rgba(255,255,255,0.45)", margin: "0 0 1.5rem" }}>Рақиб бозиро тарк кард</p>
+                )}
               </>
             ) : (
               <>
@@ -933,7 +929,6 @@ export default function DuelPage() {
               </>
             )}
 
-            {/* Scores */}
             <div style={{ display: "flex", gap: "1rem", margin: "1.5rem 0", justifyContent: "center" }}>
               <div style={{
                 flex: 1, padding: "1.25rem", borderRadius: 12,
@@ -953,6 +948,19 @@ export default function DuelPage() {
                 <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", margin: 0 }}>ҷавоби дуруст</p>
               </div>
             </div>
+
+            {iEarnedReward && result.reward && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)",
+                borderRadius: 10, padding: "0.75rem 1rem", marginBottom: "1.5rem",
+              }}>
+                <Gift size={16} color="#FBBF24" />
+                <span style={{ color: "#FBBF24", fontSize: "0.9rem", fontWeight: 600 }}>
+                  Мукофот: +{result.reward.coins} танга, +{result.reward.xp} XP
+                </span>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: "0.75rem", flexDirection: "column" }}>
               <button
