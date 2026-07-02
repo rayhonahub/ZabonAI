@@ -252,8 +252,7 @@ If text has no errors, return empty errors array and score 100.
 All explanations MUST be in Tajik language.
 """
     try:
-        response = ai_service.model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = ai_service.safe_generate(prompt).strip()
         if "```json" in text_resp:
             text_resp = text_resp.split("```json")[1].split("```")[0].strip()
         elif "```" in text_resp:
@@ -320,8 +319,7 @@ IMPORTANT: All text in Tajik language only, no Russian.
 """
     try:
         import json as json_lib
-        response = ai_service.model.generate_content(prompt)
-        text = response.text.strip()
+        text = ai_service.safe_generate(prompt).strip()
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
@@ -384,8 +382,7 @@ IMPORTANT RULES:
     ) + "\nAI:"
 
     try:
-        response = ai_service.model.generate_content(full_prompt)
-        ai_reply = response.text.strip()
+        ai_reply = ai_service.safe_generate(full_prompt).strip()
     except Exception:
         ai_reply = "Sorry, I didn't catch that. Could you repeat? [ИИ ҳоло банд аст, боз кӯшиш кун]"
 
@@ -438,83 +435,44 @@ def generate_personal_story(
         known_words = ["hello", "school", "friend", "water", "home",
                       "teacher", "book", "family", "learn", "happy"]
 
-    known_words_str = ", ".join(set(known_words[:15]))
+    result = ai_service.generate_personal_story(user_level, list(set(known_words)))
 
-    level_instructions = {
-        "beginner": "very simple sentences, max 8 words each, A1 level vocabulary",
-        "elementary": "simple sentences, A2 level, some variety",
-        "intermediate": "normal sentences, B1 level, more complex ideas",
-        "advanced": "natural English, B2 level, varied sentence structure"
-    }
+    history = models.AIChatHistory(
+        user_id=current_user.id,
+        message=f"[STORY] level={user_level}",
+        response=json_lib.dumps(result, ensure_ascii=False),
+        chat_type="story"
+    )
+    db.add(history)
+    db.commit()
+    return result
 
-    prompt = f"""
-You are creating a personalized English reading story for a Tajik speaker.
 
-Student level: {user_level}
-Words they know: {known_words_str}
-Story requirements: {level_instructions.get(user_level, level_instructions['beginner'])}
+@router.post("/story-chat")
+def story_chat(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    story_text = data.get("story_text", "")
+    user_message = data.get("message", "")
+    chat_history = data.get("history", [])
 
-Create a short story (150-200 words) that:
-1. Uses most of the known words naturally
-2. Adds exactly 5 NEW words (mark them with ** on both sides like **word**)
-3. Has a simple, engaging plot (daily life, adventure, or friendship theme)
-4. Is appropriate and educational
+    if not user_message:
+        raise HTTPException(400, "Паём холӣ аст")
 
-Return ONLY this JSON, no extra text:
-{{
-  "title_en": "Story Title in English",
-  "title_tj": "Номи ҳикоя ба тоҷикӣ",
-  "story": "Full story text here with **new_words** marked",
-  "new_words": [
-    {{"word": "word1", "translation_tj": "тарҷума1", "phonetic": "/fəˈnetɪk/"}},
-    {{"word": "word2", "translation_tj": "тарҷума2", "phonetic": "/fəˈnetɪk/"}},
-    {{"word": "word3", "translation_tj": "тарҷума3", "phonetic": "/fəˈnetɪk/"}},
-    {{"word": "word4", "translation_tj": "тарҷума4", "phonetic": "/fəˈnetɪk/"}},
-    {{"word": "word5", "translation_tj": "тарҷума5", "phonetic": "/fəˈnetɪk/"}}
-  ],
-  "comprehension_questions": [
-    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}},
-    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}},
-    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}}
-  ]
-}}
-"""
-    try:
-        response = ai_service.model.generate_content(prompt)
-        text = response.text.strip()
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0].strip()
-        result = json_lib.loads(text)
+    response = ai_service.chat_about_story(story_text, user_message, chat_history)
 
-        history = models.AIChatHistory(
-            user_id=current_user.id,
-            message=f"[STORY] level={user_level}",
-            response=json_lib.dumps(result, ensure_ascii=False),
-            chat_type="story"
-        )
-        db.add(history)
-        db.commit()
-        return result
-    except Exception as e:
-        return {
-            "title_en": "My English Day",
-            "title_tj": "Рӯзи англисии ман",
-            "story": "Sara wakes up early. She goes to **school** with her friend Ali. They study **English** together. The teacher is very **kind**. Sara learns new **vocabulary** every day. She is very **proud** of herself.",
-            "new_words": [
-                {"word": "kind", "translation_tj": "меҳрубон", "phonetic": "/kaɪnd/"},
-                {"word": "vocabulary", "translation_tj": "луғат", "phonetic": "/vəˈkæbjəleri/"},
-                {"word": "proud", "translation_tj": "ифтихордор", "phonetic": "/praʊd/"},
-                {"word": "early", "translation_tj": "барвақт", "phonetic": "/ˈɜːrli/"},
-                {"word": "together", "translation_tj": "якҷоя", "phonetic": "/təˈɡeðər/"}
-            ],
-            "comprehension_questions": [
-                {"question_en": "Who goes to school?", "question_tj": "Кӣ ба мактаб меравад?", "answer": "Sara"},
-                {"question_en": "Who does Sara study with?", "question_tj": "Сара бо кӣ мехонад?", "answer": "Ali"},
-                {"question_en": "How does Sara feel?", "question_tj": "Сара чӣ ҳис мекунад?", "answer": "Proud"}
-            ]
-        }
+    history = models.AIChatHistory(
+        user_id=current_user.id,
+        message=f"[STORY-CHAT] {user_message}",
+        response=response,
+        chat_type="story_chat"
+    )
+    db.add(history)
+    db.commit()
+
+    return {"reply": response}
 
 
 @router.get("/weekly-digest")
@@ -586,8 +544,7 @@ Make it personal, warm and encouraging. Use the student's name.
 ALL text must be in Tajik language only. No Russian.
 """
     try:
-        response = ai_service.model.generate_content(prompt)
-        text = response.text.strip()
+        text = ai_service.safe_generate(prompt).strip()
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
