@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Swords, Trophy, RefreshCw, Users, Plus, LogIn, Clock } from "lucide-react";
+import {
+  Swords, Trophy, RefreshCw, Users, Plus, LogIn, Clock,
+  AlertCircle, Share2, PlayCircle, Play,
+} from "lucide-react";
 import api from "../api/axios";
 import NeuralBackground from "../components/NeuralBackground";
 import Navbar from "../components/Navbar";
@@ -32,6 +35,15 @@ export default function DuelPage() {
 
   // Result state
   const [result, setResult] = useState(null); // { scores, playerNames, winnerId, winnerName }
+
+  // Solo test mode state
+  const [soloQuestions, setSoloQuestions] = useState([]);
+  const [soloIndex, setSoloIndex] = useState(0);
+  const [soloScore, setSoloScore] = useState(0);
+  const [soloSelected, setSoloSelected] = useState(null);
+  const [soloAnswered, setSoloAnswered] = useState(false);
+  const [soloTimeLeft, setSoloTimeLeft] = useState(QUESTION_SECONDS);
+  const soloTimerRef = useRef(null);
 
   const timerRef = useRef(null);
 
@@ -75,6 +87,61 @@ export default function DuelPage() {
         return t - 1;
       });
     }, 1000);
+  }
+
+  function clearSoloTimer() {
+    if (soloTimerRef.current) clearInterval(soloTimerRef.current);
+  }
+
+  function startSoloTimer() {
+    clearSoloTimer();
+    setSoloTimeLeft(QUESTION_SECONDS);
+    soloTimerRef.current = setInterval(() => {
+      setSoloTimeLeft((t) => {
+        if (t <= 1) {
+          clearSoloTimer();
+          setSoloAnswered(true);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }
+
+  function handleStartSolo() {
+    setError("");
+    api.get("/quiz/daily-challenge").then((r) => {
+      setSoloQuestions(r.data);
+      setSoloIndex(0);
+      setSoloScore(0);
+      setSoloSelected(null);
+      setSoloAnswered(false);
+      setScreen("solo");
+      startSoloTimer();
+    }).catch(() => setError("Саволҳоро гирифтан нашуд"));
+  }
+
+  function handleSoloAnswer(opt) {
+    if (soloAnswered) return;
+    clearSoloTimer();
+    setSoloSelected(opt);
+    setSoloAnswered(true);
+    const q = soloQuestions[soloIndex];
+    if (q && opt === q.correct_answer) {
+      setSoloScore((s) => s + 1);
+    }
+  }
+
+  function handleSoloNext() {
+    const nextIndex = soloIndex + 1;
+    if (nextIndex >= soloQuestions.length) {
+      setScreen("soloResult");
+    } else {
+      setSoloIndex(nextIndex);
+      setSoloSelected(null);
+      setSoloAnswered(false);
+      startSoloTimer();
+    }
   }
 
   const connectWS = useCallback((roomId) => {
@@ -131,14 +198,15 @@ export default function DuelPage() {
       }
     };
 
-    ws.onerror = () => {
-      setError("Хатои пайвастшавӣ. Дубора кӯшиш кунед.");
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setError("Пайвасти WebSocket хато дод. Backend кор мекунад?");
       setScreen("lobby");
     };
 
-    ws.onclose = () => {
-      if (screen === "game") {
-        setError("Пайваст қатъ шуд");
+    ws.onclose = (event) => {
+      if (event.code !== 1000) {
+        setError("Пайваст қатъ шуд. Боз кӯшиш кун.");
         setScreen("lobby");
       }
     };
@@ -170,6 +238,7 @@ export default function DuelPage() {
 
   function handleRestart() {
     if (wsRef.current) wsRef.current.close();
+    clearSoloTimer();
     setScreen("lobby");
     setRoomCode("");
     setJoinCode("");
@@ -179,10 +248,16 @@ export default function DuelPage() {
     setScores({});
     setPlayers({});
     setMyId(null);
+    setSoloQuestions([]);
+    setSoloIndex(0);
+    setSoloScore(0);
+    setSoloSelected(null);
+    setSoloAnswered(false);
   }
 
   useEffect(() => () => {
     clearTimer();
+    clearSoloTimer();
     if (wsRef.current) wsRef.current.close();
   }, []);
 
@@ -222,7 +297,40 @@ export default function DuelPage() {
             </p>
           </div>
 
-          {error && (
+          {error && error === "Хона ёфт нашуд" && (
+            <div className="glass-card" style={{
+              border: "1.5px solid rgba(251,191,36,0.35)", borderRadius: 12,
+              padding: "1.5rem", marginBottom: "1.5rem", textAlign: "center",
+            }}>
+              <AlertCircle size={28} color="#FBBF24" style={{ marginBottom: "0.5rem" }} />
+              <h3 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem", fontWeight: 700, color: "#FBBF24" }}>
+                Хона ёфт нашуд
+              </h3>
+              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.85rem", margin: "0 0 0.5rem" }}>
+                Сабабҳои эҳтимолӣ:
+              </p>
+              <ul style={{
+                textAlign: "left", color: "rgba(255,255,255,0.55)", fontSize: "0.85rem",
+                margin: "0 0 1rem", paddingLeft: "1.25rem", lineHeight: 1.7,
+              }}>
+                <li>Рамз нодуруст аст — боз тафтиш кун</li>
+                <li>Хона аллакай пур аст (2 бозингар)</li>
+                <li>Хона манқӯх шудааст (вақт гузашт)</li>
+              </ul>
+              <button
+                onClick={() => setError("")}
+                style={{
+                  padding: "0.55rem 1.25rem", borderRadius: 8, border: "none",
+                  background: "linear-gradient(135deg, #B45309, #FBBF24)",
+                  color: "white", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer",
+                }}
+              >
+                Боз кӯшиш кун
+              </button>
+            </div>
+          )}
+
+          {error && error !== "Хона ёфт нашуд" && (
             <div style={{
               background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)",
               borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1.5rem",
@@ -232,7 +340,7 @@ export default function DuelPage() {
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
             {/* Create Room */}
             <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, textAlign: "center" }}>
               <div style={{
@@ -294,6 +402,31 @@ export default function DuelPage() {
                 Пайваст шудан
               </button>
             </div>
+
+            {/* Solo Test Mode */}
+            <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, textAlign: "center" }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 10,
+                background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem",
+              }}>
+                <PlayCircle size={20} color="#14B8A6" />
+              </div>
+              <h3 style={{ margin: "0 0 0.5rem", fontSize: "1rem", fontWeight: 600 }}>Санҷиши яккаса</h3>
+              <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.82rem", margin: "0 0 1.25rem" }}>
+                Бе рақиб тест кун
+              </p>
+              <button
+                onClick={handleStartSolo}
+                style={{
+                  width: "100%", padding: "0.65rem", borderRadius: 8, border: "none",
+                  background: "linear-gradient(135deg, #0D9488, #14B8A6)",
+                  color: "white", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer",
+                }}
+              >
+                Санҷиш
+              </button>
+            </div>
           </div>
 
           {/* Available Rooms */}
@@ -334,6 +467,39 @@ export default function DuelPage() {
               </div>
             </div>
           )}
+
+          {/* How to play instructions */}
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: 12, marginTop: "2rem" }}>
+            <h3 style={{ margin: "0 0 1.25rem", fontSize: "1rem", fontWeight: 600, textAlign: "center" }}>
+              Чӣ тавр бозӣ кард?
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+              {[
+                { icon: Plus, text: "Хонаи нав созед ва рамзро гиред" },
+                { icon: Share2, text: "Рамзро ба дӯстатон фиристед" },
+                { icon: LogIn, text: "Дӯстатон рамзро ворид мекунад" },
+                { icon: Play, text: "Бозӣ оғоз мешавад!" },
+              ].map((step, i) => {
+                const Icon = step.icon;
+                return (
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, margin: "0 auto 0.6rem",
+                      background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.2)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Icon size={18} color="#14B8A6" />
+                    </div>
+                    <p style={{
+                      color: "rgba(255,255,255,0.55)", fontSize: "0.78rem", margin: 0, lineHeight: 1.4,
+                    }}>
+                      <span style={{ color: "#14B8A6", fontWeight: 700 }}>{i + 1}.</span> {step.text}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -352,17 +518,20 @@ export default function DuelPage() {
           <div className="glass-card" style={{ padding: "2.5rem", borderRadius: 16, textAlign: "center", maxWidth: 420, width: "100%" }}>
             <Swords size={40} color="#14B8A6" style={{ marginBottom: "1rem" }} />
             <h2 style={{ fontSize: "1.4rem", fontWeight: 700, margin: "0 0 0.5rem" }}>Хона сохта шуд!</h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", margin: "0 0 1.5rem" }}>
-              Рамзи хонаро бо дӯст мубодила кунед:
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", margin: "0 0 0.75rem" }}>
+              Рамзи хона:
             </p>
             <div style={{
               fontSize: "2.5rem", fontWeight: 800, color: "#14B8A6",
-              letterSpacing: 8, marginBottom: "1.5rem",
+              letterSpacing: 8, marginBottom: "1rem",
               background: "rgba(20,184,166,0.08)", borderRadius: 10, padding: "0.75rem",
               border: "1.5px solid rgba(20,184,166,0.25)",
             }}>
               {roomCode}
             </div>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", margin: "0 0 1.5rem" }}>
+              Ин рамзро ба дӯстат бифирест. Ӯ бояд ин рамзро ворид кунад.
+            </p>
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", color: "rgba(255,255,255,0.5)" }}>
               <span style={{ display: "flex", gap: 4 }}>
                 {[0, 1, 2].map((i) => (
@@ -377,6 +546,9 @@ export default function DuelPage() {
               </span>
               Мунтазири рақиб...
             </div>
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem", margin: "1rem 0 0" }}>
+              Барои санҷиш ду браузер кушо ва дар ҳарду ворид шав
+            </p>
             <style>{`@keyframes pulse { 0%,100%{opacity:.2} 50%{opacity:1} }`}</style>
           </div>
           <button
@@ -623,6 +795,185 @@ export default function DuelPage() {
                 }}
               >
                 Ба курсҳо
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SOLO TEST ───────────────────────────────────────────────────────
+  if (screen === "solo") {
+    const soloQ = soloQuestions[soloIndex];
+    const soloCircumference = 2 * Math.PI * 20;
+    const soloStrokeOffset = soloCircumference - (soloTimeLeft / QUESTION_SECONDS) * soloCircumference;
+    const soloTimerColor = soloTimeLeft > 10 ? "#14B8A6" : "#FBBF24";
+
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C 0%, #0A2A2E 100%)", color: "white" }}>
+        <NeuralBackground />
+
+        <div style={{
+          position: "sticky", top: 0, zIndex: 30,
+          background: "rgba(6,26,28,0.85)", backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(20,184,166,0.15)",
+          padding: "0.75rem 1.5rem",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#14B8A6" }}>Санҷиши яккаса</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Савол</div>
+            <div style={{ fontWeight: 700, color: "white" }}>{soloIndex + 1} / {soloQuestions.length}</div>
+          </div>
+          <span style={{
+            fontWeight: 800, fontSize: "1.3rem", color: "#14B8A6",
+            background: "rgba(20,184,166,0.1)", borderRadius: 6, padding: "0 0.5rem",
+          }}>{soloScore}</span>
+        </div>
+
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1rem" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
+            <div style={{ position: "relative", width: 56, height: 56 }}>
+              <svg width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="28" cy="28" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+                <circle
+                  cx="28" cy="28" r="20" fill="none"
+                  stroke={soloTimerColor} strokeWidth="4"
+                  strokeDasharray={soloCircumference}
+                  strokeDashoffset={soloStrokeOffset}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
+                />
+              </svg>
+              <span style={{
+                position: "absolute", inset: 0, display: "flex", alignItems: "center",
+                justifyContent: "center", fontWeight: 700, fontSize: "0.9rem", color: soloTimerColor,
+              }}>
+                {soloTimeLeft}
+              </span>
+            </div>
+          </div>
+
+          {soloQ && (
+            <div className="glass-card" style={{ padding: "2rem", borderRadius: 16, marginBottom: "1.25rem" }}>
+              <p style={{ fontSize: "1.15rem", fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
+                {soloQ.question}
+              </p>
+            </div>
+          )}
+
+          {soloQ && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              {optionKeys.map((key, i) => {
+                const val = soloQ[key];
+                if (!val) return null;
+                const label = optionLabels[i];
+                const isSelected = soloSelected === label;
+                const isCorrect = soloAnswered && label === soloQ.correct_answer;
+                const isWrong = soloAnswered && isSelected && !isCorrect;
+
+                let bg = "rgba(255,255,255,0.04)";
+                let border = "1.5px solid rgba(255,255,255,0.1)";
+                let color = "rgba(255,255,255,0.85)";
+
+                if (isCorrect) { bg = "rgba(20,184,166,0.18)"; border = "1.5px solid #14B8A6"; color = "#14B8A6"; }
+                else if (isWrong) { bg = "rgba(251,191,36,0.12)"; border = "1.5px solid #FBBF24"; color = "#FBBF24"; }
+                else if (isSelected) { bg = "rgba(20,184,166,0.08)"; border = "1.5px solid rgba(20,184,166,0.4)"; }
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleSoloAnswer(label)}
+                    disabled={soloAnswered}
+                    style={{
+                      padding: "0.85rem 1rem", borderRadius: 10,
+                      background: bg, border, color,
+                      fontWeight: 500, fontSize: "0.9rem", textAlign: "left",
+                      cursor: soloAnswered ? "default" : "pointer",
+                      transition: "all 0.2s",
+                      display: "flex", alignItems: "center", gap: 10,
+                    }}
+                  >
+                    <span style={{
+                      minWidth: 26, height: 26, borderRadius: 6,
+                      background: isCorrect ? "rgba(20,184,166,0.2)" : isWrong ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.06)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: 700, fontSize: "0.8rem", color: "inherit",
+                    }}>
+                      {label.toUpperCase()}
+                    </span>
+                    {val}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {soloAnswered && (
+            <button
+              onClick={handleSoloNext}
+              style={{
+                width: "100%", marginTop: "1.5rem", padding: "0.75rem", borderRadius: 10, border: "none",
+                background: "linear-gradient(135deg, #0D9488, #14B8A6)",
+                color: "white", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
+              }}
+            >
+              {soloIndex + 1 >= soloQuestions.length ? "Дидани натиҷа" : "Саволи навбатӣ"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SOLO RESULT ─────────────────────────────────────────────────────
+  if (screen === "soloResult") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#061A1C", color: "white" }}>
+        <NeuralBackground />
+        <Navbar />
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", minHeight: "calc(100vh - 64px)", padding: "2rem",
+        }}>
+          <div className="glass-card" style={{ padding: "2.5rem", borderRadius: 20, textAlign: "center", maxWidth: 420, width: "100%" }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 20, margin: "0 auto 1rem",
+              background: "rgba(20,184,166,0.15)", border: "1.5px solid rgba(20,184,166,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 32px rgba(20,184,166,0.2)",
+            }}>
+              <PlayCircle size={36} color="#14B8A6" />
+            </div>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#14B8A6", margin: "0 0 0.5rem" }}>
+              Санҷиш тамом шуд!
+            </h2>
+            <p style={{ color: "white", fontWeight: 700, fontSize: "1.4rem", margin: "0 0 1.5rem" }}>
+              Натиҷа: {soloScore}/{soloQuestions.length}
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", flexDirection: "column" }}>
+              <button
+                onClick={handleStartSolo}
+                style={{
+                  padding: "0.75rem", borderRadius: 10, border: "none",
+                  background: "linear-gradient(135deg, #0D9488, #14B8A6)",
+                  color: "white", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
+                }}
+              >
+                <RefreshCw size={16} /> Такрор
+              </button>
+              <button
+                onClick={handleRestart}
+                style={{
+                  padding: "0.75rem", borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "transparent", color: "rgba(255,255,255,0.6)",
+                  fontWeight: 600, fontSize: "0.95rem", cursor: "pointer",
+                }}
+              >
+                Бозгашт ба лобби
               </button>
             </div>
           </div>
