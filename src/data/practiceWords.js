@@ -1,16 +1,16 @@
 export const WORD_PAIRS = [
-  { word: "apple", translation: "яблоко", emoji: "🍎" },
-  { word: "book", translation: "книга", emoji: "📚" },
-  { word: "water", translation: "вода", emoji: "💧" },
-  { word: "house", translation: "дом", emoji: "🏠" },
-  { word: "dog", translation: "собака", emoji: "🐶" },
-  { word: "cat", translation: "кошка", emoji: "🐱" },
-  { word: "sun", translation: "солнце", emoji: "☀️" },
-  { word: "star", translation: "звезда", emoji: "⭐" },
-  { word: "tree", translation: "дерево", emoji: "🌳" },
-  { word: "car", translation: "машина", emoji: "🚗" },
-  { word: "friend", translation: "друг", emoji: "🤝" },
-  { word: "music", translation: "музыка", emoji: "🎵" },
+  { word: "apple", translation: "себ", emoji: "🍎" },
+  { word: "book", translation: "китоб", emoji: "📚" },
+  { word: "water", translation: "об", emoji: "💧" },
+  { word: "house", translation: "хона", emoji: "🏠" },
+  { word: "dog", translation: "саг", emoji: "🐶" },
+  { word: "cat", translation: "гурба", emoji: "🐱" },
+  { word: "sun", translation: "офтоб", emoji: "☀️" },
+  { word: "star", translation: "ситора", emoji: "⭐" },
+  { word: "tree", translation: "дарахт", emoji: "🌳" },
+  { word: "car", translation: "мошин", emoji: "🚗" },
+  { word: "friend", translation: "дӯст", emoji: "🤝" },
+  { word: "music", translation: "мусиқӣ", emoji: "🎵" },
 ];
 
 export const FILL_GAP_SENTENCES = [

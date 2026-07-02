@@ -12,7 +12,7 @@ function MicIcon() {
   );
 }
 
-export default function VoiceModal({ lessonId }) {
+export default function VoiceModal({ lessonId, bottom = 24 }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [recognizedText, setRecognizedText] = useState("");
@@ -70,10 +70,17 @@ export default function VoiceModal({ lessonId }) {
           setOpen(true);
           setStatus("idle");
         }}
-        title="Ask by voice / Спросить голосом"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+        title="Аз AI пурс"
+        style={{
+          position: "fixed", bottom, right: 24, zIndex: 40,
+          display: "flex", alignItems: "center", gap: 8,
+          background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6,
+          padding: "0.75rem 1.1rem", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+          boxShadow: "0 6px 20px rgba(20,184,166,0.35)",
+        }}
       >
         <MicIcon />
+        Аз AI пурс
       </button>
 
       {open && (
@@ -82,7 +89,7 @@ export default function VoiceModal({ lessonId }) {
             className="bg-white rounded-2xl shadow-card p-6 w-full max-w-sm text-center animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm font-bold text-navy mb-4">Ask about this lesson / Спросить об уроке</p>
+            <p className="text-sm font-bold text-navy mb-4">Дар бораи ин дарс бипурс</p>
 
             <button
               onClick={startRecording}
@@ -95,32 +102,32 @@ export default function VoiceModal({ lessonId }) {
             </button>
 
             <p className="text-sm text-slate-500 mb-4">
-              {status === "idle" && "Нажми кнопку и говори по-английски"}
-              {status === "recording" && "🔴 Запись... говори сейчас!"}
-              {status === "processing" && "⏳ Обрабатываем..."}
-              {status === "error" && "❌ Не удалось распознать речь / Voice not supported"}
-              {status === "done" && "✅ Готово"}
+              {status === "idle" && "Тугмаро пахш карда, бо забони англисӣ гап зан"}
+              {status === "recording" && "🔴 Сабт... ҳоло гап зан!"}
+              {status === "processing" && "⏳ Коркард шуда истодааст..."}
+              {status === "error" && "❌ Овоз шинохта нашуд"}
+              {status === "done" && "✅ Тайёр"}
             </p>
 
             {status === "done" && (
               <div className="text-left space-y-2 mb-4">
                 <p className="text-sm bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                  📝 You said: {recognizedText}
+                  📝 Ту гуфтӣ: {recognizedText}
                 </p>
                 <p className="text-sm bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 whitespace-pre-wrap">
-                  🤖 AI Feedback: {aiResponse}
+                  🤖 Ҷавоби AI: {aiResponse}
                 </p>
               </div>
             )}
 
             {(status === "done" || status === "error") && (
               <button onClick={startRecording} className="text-sm font-semibold text-blue-600 hover:underline mb-2 block w-full">
-                Try Again / Попробовать снова
+                Боз кӯшиш кун
               </button>
             )}
 
             <button onClick={close} className="block w-full mt-2 text-xs text-slate-400 hover:text-slate-600">
-              Close / Закрыть
+              Пӯшидан
             </button>
           </div>
         </div>

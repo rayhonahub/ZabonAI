@@ -305,7 +305,7 @@ export default function LessonPage() {
           <div>
             <BookOpen size={48} style={{ color: "#2DD4BF", margin: "0 auto 14px" }} />
           </div>
-          <h1 style={{ color: "white", fontWeight: 500, fontSize: 28, margin: "0 0 22px", lineHeight: 1.3 }}>
+          <h1 style={{ color: "#2DD4BF", fontWeight: 500, fontSize: 28, margin: "0 0 22px", lineHeight: 1.3 }}>
             {emoji} {lesson.title}
           </h1>
 
@@ -434,9 +434,9 @@ export default function LessonPage() {
         {/* Bottom bar */}
         <div style={{
           position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30,
-          background: "rgba(6,26,28,0.92)", backdropFilter: "blur(12px)",
+          background: "rgba(6,26,28,0.95)", backdropFilter: "blur(10px)",
           borderTop: "1px solid rgba(45,212,191,0.15)",
-          padding: "0.85rem 1.25rem",
+          padding: "16px 24px",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         }}>
           <button
@@ -444,7 +444,7 @@ export default function LessonPage() {
             disabled={readingIndex === 0}
             style={{
               background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6,
-              color: readingIndex === 0 ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.75)",
+              color: readingIndex === 0 ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.6)",
               padding: "0.6rem 1.1rem", fontSize: 13.5, fontWeight: 500,
               cursor: readingIndex === 0 ? "not-allowed" : "pointer",
             }}
@@ -483,7 +483,7 @@ export default function LessonPage() {
         <button
           onClick={() => navigate(`/quiz/${lesson.id}`)}
           style={{
-            position: "fixed", bottom: 84, right: 24, zIndex: 30,
+            position: "fixed", bottom: 140, right: 24, zIndex: 30,
             display: "flex", alignItems: "center", gap: 8,
             background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6,
             padding: "0.75rem 1.1rem", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
@@ -493,7 +493,7 @@ export default function LessonPage() {
           <Trophy size={16} /> Тест супоридан
         </button>
 
-        <VoiceModal lessonId={lesson.id} />
+        <VoiceModal lessonId={lesson.id} bottom={80} />
       </div>
     );
   }

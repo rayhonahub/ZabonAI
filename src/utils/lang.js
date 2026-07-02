@@ -5,7 +5,7 @@ export const LANGUAGES = [
 ];
 
 export function getLang() {
-  return localStorage.getItem("lang") || "ru";
+  return localStorage.getItem("lang") || "tj";
 }
 
 export function setLang(code) {

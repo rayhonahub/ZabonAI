@@ -7,6 +7,8 @@ import api from "../api/axios";
 import { showToast } from "../utils/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 
+const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
+
 const optionKeys = ["a", "b", "c", "d"];
 
 function resultEmoji(score) {
@@ -16,13 +18,65 @@ function resultEmoji(score) {
 }
 
 function resultMessage(score) {
-  if (score >= 80) return "Excellent! / Отлично!";
-  if (score >= 60) return "Good job! / Хорошая работа!";
-  return "Keep practicing! / Продолжай практиковаться!";
+  if (score >= 80) return "Аъло! Шумо хеле хуб кор кардед!";
+  if (score >= 60) return "Хуб! Давом диҳед!";
+  return "Ташвиш нашавед! Боз кӯшиш кунед.";
+}
+
+function optionStyle({ isSelected, showFeedback, isCorrectKey }) {
+  const base = {
+    width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12,
+    padding: "14px 20px", borderRadius: 6, cursor: "pointer", transition: "all 0.2s",
+    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(45,212,191,0.15)", color: "white",
+  };
+  if (showFeedback && isCorrectKey) {
+    return { ...base, border: "1px solid #14B8A6", background: "rgba(20,184,166,0.2)", cursor: "default" };
+  }
+  if (showFeedback && isSelected && !isCorrectKey) {
+    return { ...base, border: "1px solid #EF4444", background: "rgba(239,68,68,0.1)", cursor: "default" };
+  }
+  if (isSelected) {
+    return { ...base, border: "1px solid rgba(45,212,191,0.4)", background: "rgba(45,212,191,0.08)" };
+  }
+  return base;
+}
+
+function OptionButton({ text, keyLabel, isSelected, showFeedback, isCorrectKey, disabled, onClick }) {
+  return (
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      style={optionStyle({ isSelected, showFeedback, isCorrectKey })}
+      onMouseEnter={(e) => {
+        if (disabled || showFeedback) return;
+        e.currentTarget.style.borderColor = "rgba(45,212,191,0.4)";
+        e.currentTarget.style.background = "rgba(45,212,191,0.08)";
+      }}
+      onMouseLeave={(e) => {
+        if (disabled || showFeedback || isSelected) return;
+        e.currentTarget.style.borderColor = "rgba(45,212,191,0.15)";
+        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+      }}
+    >
+      <span
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28,
+          borderRadius: "50%", fontSize: 12, fontWeight: 700, flexShrink: 0,
+          background: showFeedback && isCorrectKey ? "#14B8A6" : showFeedback && isSelected ? "#EF4444" : "rgba(255,255,255,0.08)",
+          color: showFeedback && (isCorrectKey || isSelected) ? "#04231F" : "rgba(255,255,255,0.6)",
+        }}
+      >
+        {keyLabel.toUpperCase()}
+      </span>
+      <span style={{ fontSize: 14 }}>{text}</span>
+      {showFeedback && isCorrectKey && <span style={{ marginLeft: "auto" }}>✅</span>}
+      {showFeedback && isSelected && !isCorrectKey && <span style={{ marginLeft: "auto" }}>❌</span>}
+    </button>
+  );
 }
 
 export default function QuizPage() {
-  usePageTitle("Quiz");
+  usePageTitle("Тест");
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -100,7 +154,7 @@ export default function QuizPage() {
       });
       setResult(res.data);
       setMode("result");
-      showToast("ℹ️ Quiz saved / Тест сохранён", "info");
+      showToast("ℹ️ Тест сабт шуд", "info");
 
       if (res.data.level_up) {
         api
@@ -112,7 +166,7 @@ export default function QuizPage() {
           .catch(() => setLevelUpCourses([]));
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Could not submit quiz / Не удалось отправить тест");
+      setError(err.response?.data?.detail || "Тестро фиристода нашуд");
     } finally {
       setSubmitting(false);
     }
@@ -140,11 +194,11 @@ export default function QuizPage() {
 
   if (questions === null) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen" style={{ background: BG }}>
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-16 animate-pulse">
-          <div className="h-3 bg-white rounded-full mb-8" />
-          <div className="h-56 bg-white rounded-2xl shadow-card" />
+          <div className="h-3 rounded-full mb-8" style={{ background: "rgba(255,255,255,0.06)" }} />
+          <div className="h-56 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
         </div>
       </div>
     );
@@ -152,10 +206,10 @@ export default function QuizPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen" style={{ background: BG }}>
         <Navbar />
-        <div className="text-center py-20 text-slate-400">
-          No quiz available for this lesson / Тест для этого урока недоступен
+        <div className="text-center py-20" style={{ color: "rgba(255,255,255,0.4)" }}>
+          Барои ин дарс тест мавҷуд нест
         </div>
       </div>
     );
@@ -170,21 +224,21 @@ export default function QuizPage() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen" style={{ background: BG }}>
         <Navbar />
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-lg font-bold text-navy">
-              Practice Wrong Answers / Практика ошибок
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "48px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <h1 style={{ color: "white", fontWeight: 700, fontSize: 17, margin: 0 }}>
+              Машқи ҷавобҳои нодуруст
             </h1>
-            <span className="text-xs font-semibold text-slate-400">
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
               {practiceIndex + 1} / {wrongResults.length}
             </span>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8" key={pq.question_id}>
-            <h2 className="text-lg font-bold text-navy mb-6">{pq.question}</h2>
-            <div className="space-y-3">
+          <div className="glass-card" style={{ padding: 32 }} key={pq.question_id}>
+            <h2 style={{ color: "white", fontWeight: 700, fontSize: 17, marginBottom: 22 }}>{pq.question}</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {optionKeys.map((key) => {
                 const text = original?.[`option_${key}`];
                 if (!text) return null;
@@ -192,33 +246,16 @@ export default function QuizPage() {
                 const isCorrectKey = key.toLowerCase() === pq.correct_answer.toLowerCase();
                 const showFeedback = !!practiceSelected;
                 return (
-                  <button
+                  <OptionButton
                     key={key}
+                    text={text}
+                    keyLabel={key}
+                    isSelected={isSelected}
+                    showFeedback={showFeedback}
+                    isCorrectKey={isCorrectKey}
                     disabled={showFeedback}
                     onClick={() => setPracticeSelected(key)}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 disabled:cursor-default ${
-                      showFeedback && isCorrectKey
-                        ? "border-emerald-400 bg-emerald-50"
-                        : showFeedback && isSelected
-                        ? "border-rose-400 bg-rose-50 animate-[shake_0.4s_ease-in-out]"
-                        : "border-slate-100 hover:border-navy/30 hover:bg-slate-50"
-                    }`}
-                  >
-                    <span
-                      className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                        showFeedback && isCorrectKey
-                          ? "bg-emerald-500 text-white"
-                          : showFeedback && isSelected
-                          ? "bg-rose-500 text-white"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {key.toUpperCase()}
-                    </span>
-                    <span className="text-sm text-slate-700">{text}</span>
-                    {showFeedback && isCorrectKey && <span className="ml-auto">✅</span>}
-                    {showFeedback && isSelected && !isCorrectKey && <span className="ml-auto">❌</span>}
-                  </button>
+                  />
                 );
               })}
             </div>
@@ -233,20 +270,15 @@ export default function QuizPage() {
                     setMode("result");
                   }
                 }}
-                className="mt-6 w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all duration-200"
+                style={{
+                  marginTop: 24, width: "100%", padding: "12px", borderRadius: 6, fontWeight: 600, fontSize: 14,
+                  background: "#14B8A6", color: "#04231F", border: "none", cursor: "pointer",
+                }}
               >
-                {practiceIndex + 1 < wrongResults.length ? "Next / Далее →" : "Finish / Закончить"}
+                {practiceIndex + 1 < wrongResults.length ? "Саволи баъдӣ →" : "Анҷом"}
               </button>
             )}
           </div>
-
-          <style>{`
-            @keyframes shake {
-              0%, 100% { transform: translateX(0); }
-              25% { transform: translateX(-6px); }
-              75% { transform: translateX(6px); }
-            }
-          `}</style>
         </div>
       </div>
     );
@@ -255,102 +287,97 @@ export default function QuizPage() {
   if (mode === "result" && result) {
     const failed = result.score < 60;
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen" style={{ background: BG }}>
         <Navbar />
-        <div className="max-w-2xl mx-auto px-4 py-16 animate-slide-up">
-          <div className="bg-white rounded-2xl shadow-soft p-10 text-center mb-6">
-            <div className={`text-6xl mb-4 ${failed ? "animate-[droop_0.6s_ease-in-out]" : ""}`}>
-              {resultEmoji(result.score)}
-            </div>
-            <h1 className="text-3xl font-extrabold text-navy mb-1">{result.score}%</h1>
-            <p className="text-slate-500 mb-6">{resultMessage(result.score)}</p>
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "64px 16px" }}>
+          <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 24 }}>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>{resultEmoji(result.score)}</div>
+            <h1 style={{ color: "#2DD4BF", fontWeight: 800, fontSize: 32, margin: "0 0 4px" }}>{result.score}%</h1>
+            <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>{resultMessage(result.score)}</p>
 
-            <div className="flex justify-center gap-6 mb-6 text-sm">
+            <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 24, fontSize: 14 }}>
               <div>
-                <p className="text-2xl font-bold text-navy">{result.correct}</p>
-                <p className="text-slate-400">Correct / Верно</p>
+                <p style={{ color: "white", fontWeight: 700, fontSize: 22, margin: "0 0 2px" }}>{result.correct}</p>
+                <p style={{ color: "rgba(255,255,255,0.4)", margin: 0 }}>Дуруст</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-navy">{result.total}</p>
-                <p className="text-slate-400">Total / Всего</p>
+                <p style={{ color: "white", fontWeight: 700, fontSize: 22, margin: "0 0 2px" }}>{result.total}</p>
+                <p style={{ color: "rgba(255,255,255,0.4)", margin: 0 }}>Ҳамагӣ</p>
               </div>
             </div>
 
             {result.weak_topic && (
-              <div className="bg-rose-50 text-rose-600 text-sm rounded-lg px-4 py-3 mb-6">
-                This topic needs more practice / Эта тема требует больше практики
+              <div style={{
+                background: "rgba(239,68,68,0.1)", color: "#F87171", fontSize: 13.5,
+                borderRadius: 6, padding: "10px 14px", marginBottom: 24,
+              }}>
+                Ин мавзӯъ бештар машқ мехоҳад
               </div>
             )}
 
-            <div className="flex flex-col gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {failed && (
                 <button
                   onClick={restartQuiz}
-                  className="w-full py-3 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-all duration-200"
+                  style={{ width: "100%", padding: "12px", borderRadius: 6, fontWeight: 600, fontSize: 14, background: "#EF4444", color: "white", border: "none", cursor: "pointer" }}
                 >
-                  Try Again / Попробовать снова
+                  Боз кӯшиш кун
                 </button>
               )}
               {wrongResults.length > 0 && (
                 <button
                   onClick={startPracticeWrong}
-                  className="w-full py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all duration-200"
+                  style={{ width: "100%", padding: "12px", borderRadius: 6, fontWeight: 600, fontSize: 14, background: "#14B8A6", color: "#04231F", border: "none", cursor: "pointer" }}
                 >
-                  Practice Wrong Answers / Практика ошибок ({wrongResults.length})
+                  Ҷавобҳои нодурустро машқ кун ({wrongResults.length})
                 </button>
               )}
               <button
                 onClick={() => navigate(`/lessons/${id}`)}
-                className="w-full py-3 rounded-xl font-semibold text-navy bg-slate-100 hover:bg-slate-200 transition-all duration-200"
+                style={{ width: "100%", padding: "12px", borderRadius: 6, fontWeight: 600, fontSize: 14, background: "rgba(255,255,255,0.06)", color: "white", border: "none", cursor: "pointer" }}
               >
-                Back to lesson / Назад к уроку
+                Ба курс баргардан
               </button>
               <button
                 onClick={() => navigate("/progress")}
-                className="w-full py-3 rounded-xl font-semibold text-navy bg-slate-100 hover:bg-slate-200 transition-all duration-200"
+                style={{ width: "100%", padding: "12px", borderRadius: 6, fontWeight: 600, fontSize: 14, background: "rgba(255,255,255,0.06)", color: "white", border: "none", cursor: "pointer" }}
               >
-                View progress / Посмотреть прогресс
+                Пешрафтро дидан
               </button>
             </div>
           </div>
 
           {result.results?.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8">
-              <h2 className="text-lg font-bold text-navy mb-1">Review Mistakes</h2>
-              <p className="text-sm text-slate-400 mb-5">Разбор ответов</p>
+            <div className="glass-card" style={{ padding: 28 }}>
+              <h2 style={{ color: "white", fontWeight: 700, fontSize: 17, margin: "0 0 4px" }}>Хатоҳо</h2>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 18 }}>Баррасии ҷавобҳо</p>
 
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {result.results.map((r) => (
                   <div
                     key={r.question_id}
-                    className={`rounded-xl border-2 p-4 ${
-                      r.is_correct ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"
-                    }`}
+                    style={{
+                      borderRadius: 6, padding: 16,
+                      border: r.is_correct ? "1px solid rgba(20,184,166,0.3)" : "1px solid rgba(239,68,68,0.3)",
+                      background: r.is_correct ? "rgba(20,184,166,0.08)" : "rgba(239,68,68,0.08)",
+                    }}
                   >
-                    <p className="text-sm font-semibold text-navy mb-2">
+                    <p style={{ color: "white", fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
                       {r.is_correct ? "✅" : "❌"} {r.question}
                     </p>
                     {!r.is_correct && (
-                      <p className="text-sm text-rose-600 mb-1">
-                        Your answer / Твой ответ: {r.user_option_text || "—"}
+                      <p style={{ color: "#F87171", fontSize: 13.5, margin: "0 0 4px" }}>
+                        Ҷавоби шумо: {r.user_option_text || "—"}
                       </p>
                     )}
-                    <p className="text-sm text-emerald-700">
-                      Correct answer / Правильный ответ: {r.correct_option_text}
+                    <p style={{ color: "#5EEAD4", fontSize: 13.5, margin: 0 }}>
+                      Ҷавоби дуруст: {r.correct_option_text}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          <style>{`
-            @keyframes droop {
-              0% { transform: translateY(0) rotate(0deg); }
-              50% { transform: translateY(6px) rotate(-8deg); }
-              100% { transform: translateY(0) rotate(0deg); }
-            }
-          `}</style>
         </div>
 
         {result.level_up && !levelUpDismissed && (
@@ -368,65 +395,56 @@ export default function QuizPage() {
   const progress = Math.round(((index + (selected ? 1 : 0)) / activeSet.length) * 100);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: BG }}>
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
-        <div className="mb-8">
-          <div className="flex justify-between text-xs font-semibold text-slate-400 mb-2">
-            <span>
-              Question {index + 1} / {activeSet.length}
-            </span>
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "48px 16px" }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+            <span>Савол {index + 1} аз {activeSet.length}</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div style={{ height: 8, borderRadius: 20, overflow: "hidden", background: "rgba(255,255,255,0.08)" }}>
             <div
-              className="h-full bg-gradient-to-r from-navy to-gold rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
+              style={{
+                height: "100%", borderRadius: 20, background: "#14B8A6",
+                width: `${progress}%`, transition: "width 0.5s",
+              }}
             />
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 text-sm bg-red-50 text-red-600 border border-red-100 rounded-lg px-3 py-2">
+          <div style={{ marginBottom: 16, fontSize: 13.5, background: "rgba(239,68,68,0.1)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 6, padding: "8px 12px" }}>
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8 animate-slide-up" key={question.id}>
-          <h2 className="text-lg font-bold text-navy mb-6">{question.question}</h2>
+        <div className="glass-card fade-up-1" style={{ padding: 32, maxWidth: 600, margin: "auto" }} key={question.id}>
+          <h2 style={{ color: "white", fontWeight: 700, fontSize: 17, marginBottom: 22 }}>{question.question}</h2>
 
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {optionKeys.map((key) => {
               const text = question[`option_${key}`];
               if (!text) return null;
               const isSelected = selected === key;
               return (
-                <button
+                <OptionButton
                   key={key}
+                  text={text}
+                  keyLabel={key}
+                  isSelected={isSelected}
+                  showFeedback={false}
+                  isCorrectKey={false}
                   disabled={!!selected || submitting}
                   onClick={() => selectOption(question.id, key)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${
-                    isSelected
-                      ? "border-gold bg-gold/10 scale-[1.01] animate-pop"
-                      : "border-slate-100 hover:border-navy/30 hover:bg-slate-50"
-                  } disabled:cursor-default`}
-                >
-                  <span
-                    className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                      isSelected ? "bg-gold text-navy-dark" : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {key.toUpperCase()}
-                  </span>
-                  <span className="text-sm text-slate-700">{text}</span>
-                </button>
+                />
               );
             })}
           </div>
         </div>
 
         {submitting && (
-          <p className="text-center text-sm text-slate-400 mt-4">Submitting... / Отправка...</p>
+          <p style={{ textAlign: "center", fontSize: 13.5, color: "rgba(255,255,255,0.4)", marginTop: 16 }}>Фиристода истодааст...</p>
         )}
       </div>
     </div>

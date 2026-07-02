@@ -3,10 +3,25 @@ import Navbar from "../components/Navbar";
 import { WORD_PAIRS, FILL_GAP_SENTENCES } from "../data/practiceWords";
 import { usePageTitle } from "../hooks/usePageTitle";
 
+const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
+
+const DEFAULT_WORDS = [
+  { word: "hello", translation: "салом" },
+  { word: "book", translation: "китоб" },
+  { word: "water", translation: "об" },
+  { word: "house", translation: "хона" },
+  { word: "friend", translation: "дӯст" },
+  { word: "school", translation: "мактаб" },
+  { word: "teacher", translation: "муаллим" },
+  { word: "student", translation: "донишҷӯ" },
+  { word: "family", translation: "оила" },
+  { word: "apple", translation: "себ" },
+];
+
 const TABS = [
-  { key: "match", label: "Word Match", sub: "Карточки" },
-  { key: "gap", label: "Fill the Gap", sub: "Заполни пропуск" },
-  { key: "spelling", label: "Spelling Bee", sub: "Орфография" },
+  { key: "match", label: "Калима пайдо кун", sub: "Кортҳо" },
+  { key: "gap", label: "Холро пур кун", sub: "Ҷои холиро пур кун" },
+  { key: "spelling", label: "Ҳиҷокунӣ", sub: "Имло" },
 ];
 
 function shuffle(arr) {
@@ -19,6 +34,36 @@ function shuffle(arr) {
 }
 
 const BEST_TIME_KEY = "word_match_best_time";
+
+const cardBaseStyle = {
+  height: 80,
+  borderRadius: 6,
+  fontSize: 14,
+  fontWeight: 600,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 8px",
+  cursor: "pointer",
+  transition: "all 0.2s",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(45,212,191,0.2)",
+  color: "white",
+};
+
+function cardStyle({ isMatched, isWrong, isFlipped }) {
+  if (isMatched) {
+    return { ...cardBaseStyle, border: "1px solid #14B8A6", background: "rgba(20,184,166,0.15)", color: "#14B8A6", opacity: 0.6 };
+  }
+  if (isWrong) {
+    return { ...cardBaseStyle, border: "1.5px solid #F87171", background: "rgba(248,113,113,0.1)", color: "#F87171" };
+  }
+  if (isFlipped) {
+    return { ...cardBaseStyle, border: "2px solid #2DD4BF", background: "rgba(45,212,191,0.1)", color: "#2DD4BF" };
+  }
+  return { ...cardBaseStyle, color: "rgba(255,255,255,0.35)" };
+}
 
 function WordMatchGame() {
   const [pairs, setPairs] = useState(() => shuffle(WORD_PAIRS).slice(0, 3));
@@ -38,7 +83,7 @@ function WordMatchGame() {
     const built = [];
     pairs.forEach((p, i) => {
       built.push({ id: `en-${i}`, pairId: i, text: p.word });
-      built.push({ id: `ru-${i}`, pairId: i, text: p.translation });
+      built.push({ id: `tj-${i}`, pairId: i, text: p.translation });
     });
     setCards(shuffle(built));
   }, [pairs]);
@@ -90,42 +135,32 @@ function WordMatchGame() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 text-sm font-semibold text-slate-500">
-        <span>⏱ {seconds}s</span>
-        <span>🏆 Best / Лучшее: {bestTime !== null ? `${bestTime}s` : "—"}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, fontSize: 13.5, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+        <span>⏱ {seconds} сония</span>
+        <span>🏆 Рекорд: {bestTime !== null ? `${bestTime} сония` : "—"}</span>
       </div>
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
         {cards.map((card) => {
           const isFlipped = flipped.some((c) => c.id === card.id) || matched.includes(card.pairId);
           const isWrong = wrongFlash && flipped.some((c) => c.id === card.id);
           const isMatched = matched.includes(card.pairId);
           return (
-            <button
-              key={card.id}
-              onClick={() => handleFlip(card)}
-              className={`h-20 rounded-xl text-sm font-semibold flex items-center justify-center text-center px-2 transition-all duration-200 ${
-                isMatched
-                  ? "bg-emerald-50 border-2 border-emerald-300 text-emerald-600"
-                  : isWrong
-                  ? "bg-rose-50 border-2 border-rose-300 text-rose-600"
-                  : isFlipped
-                  ? "bg-navy text-white border-2 border-navy"
-                  : "bg-white border-2 border-slate-100 hover:border-navy/30 text-slate-300"
-              }`}
-            >
+            <button key={card.id} onClick={() => handleFlip(card)} style={cardStyle({ isMatched, isWrong, isFlipped })}>
               {isFlipped ? card.text : "❓"}
             </button>
           );
         })}
       </div>
       {done && (
-        <div className="text-center bg-gold/10 rounded-xl p-4 animate-pop">
-          <p className="font-bold text-navy mb-2">🎉 Matched in {seconds}s!</p>
+        <div className="glass-card" style={{ textAlign: "center", padding: 20 }}>
+          <p style={{ color: "#2DD4BF", fontWeight: 700, fontSize: 15, margin: "0 0 12px" }}>
+            🎉 Дар {seconds} сония ёфтед!
+          </p>
           <button
             onClick={reset}
-            className="px-5 py-2 rounded-lg font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold"
+            style={{ background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6, padding: "10px 22px", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
           >
-            Play again / Играть снова
+            Аз нав
           </button>
         </div>
       )}
@@ -171,15 +206,15 @@ function FillGapGame() {
 
   if (done) {
     return (
-      <div className="text-center bg-gold/10 rounded-xl p-6 animate-pop">
-        <p className="font-bold text-navy text-lg mb-2">
-          {score}/{sentences.length} correct!
+      <div className="glass-card" style={{ textAlign: "center", padding: 24 }}>
+        <p style={{ color: "#2DD4BF", fontWeight: 700, fontSize: 17, margin: "0 0 12px" }}>
+          {score}/{sentences.length} дуруст!
         </p>
         <button
           onClick={reset}
-          className="px-5 py-2 rounded-lg font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold"
+          style={{ background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6, padding: "10px 22px", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
         >
-          Play again / Играть снова
+          Аз нав
         </button>
       </div>
     );
@@ -187,43 +222,36 @@ function FillGapGame() {
 
   return (
     <div>
-      <div className="flex justify-between text-xs font-semibold text-slate-400 mb-3">
-        <span>
-          {index + 1} / {sentences.length}
-        </span>
-        <span>Score: {score}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>
+        <span>{index + 1} / {sentences.length}</span>
+        <span>Натиҷа: {score}</span>
       </div>
-      <p className="text-lg font-bold text-navy mb-5">{current.sentence}</p>
-      <div className="grid grid-cols-2 gap-3">
+      <p style={{ color: "white", fontWeight: 600, fontSize: 17, marginBottom: 22 }}>{current.sentence}</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {current.options.map((opt) => {
           const isSelected = selected === opt;
           const isCorrect = isSelected && feedback === "correct";
           const isWrong = isSelected && feedback === "wrong";
+          let border = "1px solid rgba(45,212,191,0.2)";
+          let bg = "rgba(255,255,255,0.05)";
+          let color = "white";
+          if (isCorrect) { border = "1px solid #14B8A6"; bg = "rgba(20,184,166,0.2)"; color = "#5EEAD4"; }
+          if (isWrong) { border = "1px solid #EF4444"; bg = "rgba(239,68,68,0.1)"; color = "#F87171"; }
           return (
             <button
               key={opt}
               onClick={() => handleSelect(opt)}
               disabled={!!feedback}
-              className={`px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
-                isCorrect
-                  ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                  : isWrong
-                  ? "border-rose-400 bg-rose-50 text-rose-700 animate-[shake_0.4s_ease-in-out]"
-                  : "border-slate-100 text-slate-700 hover:border-navy/30 hover:bg-slate-50"
-              }`}
+              style={{
+                padding: "12px 16px", borderRadius: 6, fontSize: 14, fontWeight: 600,
+                border, background: bg, color, cursor: feedback ? "default" : "pointer", transition: "all 0.2s",
+              }}
             >
               {opt}
             </button>
           );
         })}
       </div>
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-6px); }
-          75% { transform: translateX(6px); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -264,85 +292,102 @@ function SpellingBeeGame() {
 
   if (done) {
     return (
-      <div className="text-center bg-gold/10 rounded-xl p-6 animate-pop">
-        <p className="font-bold text-navy text-lg mb-2">
-          {score}/{pool.length} correct!
+      <div className="glass-card" style={{ textAlign: "center", padding: 24 }}>
+        <p style={{ color: "#2DD4BF", fontWeight: 700, fontSize: 17, margin: "0 0 12px" }}>
+          {score}/{pool.length} дуруст!
         </p>
         <button
           onClick={reset}
-          className="px-5 py-2 rounded-lg font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold"
+          style={{ background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6, padding: "10px 22px", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
         >
-          Play again / Играть снова
+          Аз нав
         </button>
       </div>
     );
   }
 
+  const inputBorder =
+    feedback === "correct" ? "1px solid #14B8A6" : feedback === "wrong" ? "1px solid #EF4444" : "1px solid rgba(45,212,191,0.25)";
+  const inputColor = feedback === "correct" ? "#5EEAD4" : feedback === "wrong" ? "#F87171" : "white";
+
   return (
-    <div className="text-center">
-      <div className="flex justify-between text-xs font-semibold text-slate-400 mb-3">
-        <span>
-          {index + 1} / {pool.length}
-        </span>
-        <span>Score: {score}</span>
+    <div style={{ textAlign: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>
+        <span>{index + 1} / {pool.length}</span>
+        <span>Натиҷа: {score}</span>
       </div>
-      <div className="text-5xl mb-2">{current.emoji}</div>
-      <p className="text-lg font-bold text-navy mb-5">{current.translation}</p>
+      <div style={{ fontSize: 48, marginBottom: 8 }}>{current.emoji}</div>
+      <p style={{ color: "white", fontWeight: 600, fontSize: 17, marginBottom: 22 }}>{current.translation}</p>
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
         disabled={!!feedback}
         autoFocus
-        placeholder="Type the English word..."
-        className={`w-full max-w-xs mx-auto px-4 py-3 rounded-xl border-2 text-center text-sm font-semibold outline-none transition-all duration-200 ${
-          feedback === "correct"
-            ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-            : feedback === "wrong"
-            ? "border-rose-400 bg-rose-50 text-rose-700"
-            : "border-slate-200 focus:border-navy"
-        }`}
+        placeholder="Калимаи англисиро нависед..."
+        style={{
+          width: "100%", maxWidth: 280, margin: "0 auto", padding: "12px 16px", borderRadius: 6,
+          border: inputBorder, background: "rgba(255,255,255,0.05)", color: inputColor,
+          textAlign: "center", fontSize: 14, fontWeight: 600, outline: "none",
+        }}
       />
       {feedback === "wrong" && (
-        <p className="text-sm text-rose-500 mt-2">Correct answer / Правильный ответ: {current.word}</p>
+        <p style={{ color: "#F87171", fontSize: 13.5, marginTop: 10 }}>Ҷавоби дуруст: {current.word}</p>
       )}
-      <button
-        onClick={handleSubmit}
-        disabled={!!feedback}
-        className="mt-4 px-6 py-2.5 rounded-xl font-semibold text-sm text-navy-dark bg-gradient-to-r from-gold-light to-gold disabled:opacity-50"
-      >
-        Check / Проверить
-      </button>
+      <div>
+        <button
+          onClick={handleSubmit}
+          disabled={!!feedback}
+          style={{
+            marginTop: 18, background: "#14B8A6", color: "#04231F", border: "none", borderRadius: 6,
+            padding: "10px 26px", fontWeight: 600, fontSize: 14, cursor: feedback ? "default" : "pointer",
+            opacity: feedback ? 0.6 : 1,
+          }}
+        >
+          Тасдиқ
+        </button>
+      </div>
     </div>
   );
 }
 
 export default function PracticePage() {
-  usePageTitle("Practice");
+  usePageTitle("Машқ");
   const [activeTab, setActiveTab] = useState("match");
+  const [words, setWords] = useState(null);
+
+  useEffect(() => {
+    if (!words || words.length === 0) {
+      setWords(DEFAULT_WORDS);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: BG }}>
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-        <h1 className="text-2xl font-extrabold text-navy mb-1">Word Practice 🎮</h1>
-        <p className="text-slate-500 mb-6">Практика слов</p>
+        <h1 style={{ color: "white", fontWeight: 800, fontSize: 24, margin: "0 0 4px" }}>Машқи калимаҳо 🎮</h1>
+        <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>Бозиҳои интерактивӣ барои омӯзиши калимаҳо</p>
 
-        <div className="flex gap-1 bg-white rounded-xl shadow-card p-1.5 mb-6 w-full sm:w-fit">
+        <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(45,212,191,0.15)", borderRadius: 8, padding: 6, marginBottom: 24, width: "fit-content", maxWidth: "100%" }}>
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                activeTab === t.key ? "bg-navy text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"
-              }`}
+              style={{
+                padding: "8px 16px", borderRadius: 6, fontSize: 13.5, fontWeight: 600, border: "none",
+                cursor: "pointer", transition: "all 0.2s",
+                background: activeTab === t.key ? "#14B8A6" : "transparent",
+                color: activeTab === t.key ? "#04231F" : "rgba(255,255,255,0.55)",
+              }}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-card p-6 sm:p-8" key={activeTab}>
+        <div className="glass-card" style={{ padding: "24px 28px" }} key={activeTab}>
           {activeTab === "match" && <WordMatchGame />}
           {activeTab === "gap" && <FillGapGame />}
           {activeTab === "spelling" && <SpellingBeeGame />}
