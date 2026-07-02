@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Flame, Gem, Sparkles, CheckCircle, Lock } from "lucide-react";
+import { BookOpen, Flame, Gem, Sparkles, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
 import NeuralBackground from "../components/NeuralBackground";
+import LevelUpModal from "../components/LevelUpModal";
 import api from "../api/axios";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { showToast } from "../utils/toastBus";
 
 const LEVELS = [
-  { key: "beginner", order: 1, label: "Ибтидоӣ" },
-  { key: "elementary", order: 2, label: "Миёна" },
-  { key: "intermediate", order: 3, label: "Болотар" },
-  { key: "advanced", order: 4, label: "Баланд" },
+  { key: "beginner", order: 1, label: "Ибтидоӣ", emoji: "🌱" },
+  { key: "elementary", order: 2, label: "Миёна", emoji: "📚" },
+  { key: "intermediate", order: 3, label: "Болотар", emoji: "🚀" },
+  { key: "advanced", order: 4, label: "Баланд", emoji: "⭐" },
 ];
-
-const FILTERS = [{ key: "all", label: "Ҳама" }, ...LEVELS.map((l) => ({ key: l.key, label: l.label }))];
 
 function LevelBadge({ level }) {
   const info = LEVELS.find((l) => l.key === level);
@@ -39,8 +40,8 @@ function LevelBadge({ level }) {
   );
 }
 
-function LevelTrack({ courses, userLevelOrder, userLevelKey }) {
-  const coursesInCurrentLevel = courses.filter((c) => c.level === userLevelKey);
+function LevelTrack({ courses, userLevelOrder }) {
+  const coursesInCurrentLevel = courses.filter((c) => c.level_order === userLevelOrder);
   const totalLessons = coursesInCurrentLevel.reduce((sum, c) => sum + (c.total_lessons || 0), 0);
   const completedLessons = coursesInCurrentLevel.reduce((sum, c) => sum + (c.completed_lessons || 0), 0);
   const pct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -55,16 +56,19 @@ function LevelTrack({ courses, userLevelOrder, userLevelKey }) {
           return (
             <div key={lvl.key} className="flex items-center" style={{ flex: i < LEVELS.length - 1 ? 1 : "0 0 auto" }}>
               <div className="flex flex-col items-center gap-1.5" style={{ minWidth: 66 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: status === "current" ? "rgba(20,184,166,0.15)" : status === "completed" ? "rgba(20,184,166,0.1)" : "rgba(255,255,255,0.04)",
-                  border: status === "current" ? "2px solid #14B8A6" : status === "completed" ? "1.5px solid rgba(20,184,166,0.5)" : "1.5px solid rgba(255,255,255,0.15)",
-                  boxShadow: status === "current" ? "0 0 16px rgba(20,184,166,0.45)" : "none",
-                  transition: "all 0.3s",
-                }}>
+                <div
+                  className={status === "current" ? "glow-pulse" : ""}
+                  style={{
+                    width: 40, height: 40, borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: status === "current" ? "rgba(20,184,166,0.15)" : status === "completed" ? "rgba(20,184,166,0.1)" : "rgba(255,255,255,0.04)",
+                    border: status === "current" ? "2px solid #14B8A6" : status === "completed" ? "1.5px solid rgba(20,184,166,0.5)" : "1.5px solid rgba(255,255,255,0.15)",
+                    boxShadow: status === "current" ? "0 0 16px rgba(20,184,166,0.45)" : "none",
+                    transition: "all 0.3s",
+                  }}
+                >
                   {status === "completed" ? (
-                    <CheckCircle size={18} style={{ color: "#2DD4BF" }} />
+                    <span style={{ color: "#2DD4BF", fontWeight: 700, fontSize: 16 }}>✓</span>
                   ) : status === "locked" ? (
                     <Lock size={15} style={{ color: "rgba(255,255,255,0.35)" }} />
                   ) : (
@@ -73,7 +77,7 @@ function LevelTrack({ courses, userLevelOrder, userLevelKey }) {
                 </div>
                 <span style={{
                   fontSize: 12, fontWeight: 600, textAlign: "center",
-                  color: status === "current" ? "#2DD4BF" : status === "completed" ? "rgba(45,212,191,0.75)" : "rgba(255,255,255,0.35)",
+                  color: status === "current" ? "#2DD4BF" : status === "completed" ? "rgba(45,212,191,0.75)" : "rgba(255,255,255,0.3)",
                 }}>
                   {lvl.label}
                 </span>
@@ -110,6 +114,60 @@ function LevelTrack({ courses, userLevelOrder, userLevelKey }) {
   );
 }
 
+function CourseCard({ course, locked, onAction, requiredLevelLabel }) {
+  const pct = course.completion_percentage ?? 0;
+  const total = course.total_lessons ?? 0;
+  const hasAny = (course.completed_lessons ?? 0) > 0;
+
+  function handleClick() {
+    if (locked) {
+      showToast(`Барои кушодан сатҳи ${requiredLevelLabel}-ро тамом кун`, "info");
+      return;
+    }
+    onAction(course);
+  }
+
+  return (
+    <div className="glass-card p-5 flex flex-col gap-3 relative" style={{ borderRadius: 6, overflow: "hidden" }}>
+      <div>
+        <LevelBadge level={course.level} />
+      </div>
+      <h3 className="text-base font-medium" style={{ color: "white" }}>{course.title}</h3>
+      <p className="text-sm line-clamp-2" style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+        {course.description}
+      </p>
+      <div>
+        <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(255,255,255,0.08)" }}>
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "#14B8A6" }} />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{total} дарс</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{pct}% тамом</p>
+        </div>
+      </div>
+      <button
+        onClick={handleClick}
+        disabled={!locked && total === 0}
+        className="mt-auto w-full py-2.5 font-medium text-sm transition-all duration-200 hover:opacity-90 disabled:opacity-40"
+        style={{ background: "#14B8A6", color: "#04231F", borderRadius: 6, border: "none", cursor: !locked && total === 0 ? "not-allowed" : "pointer" }}
+      >
+        {hasAny ? "Идома деҳ" : "Оғоз кун"}
+      </button>
+
+      {locked && (
+        <div
+          onClick={handleClick}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4 cursor-pointer"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(1px)" }}
+        >
+          <Lock size={26} style={{ color: "white" }} />
+          <p style={{ color: "white", fontSize: 13, fontWeight: 500, margin: 0 }}>🔒 Баъдтар</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CoursesPage() {
   usePageTitle("Курсҳо");
   const navigate = useNavigate();
@@ -118,7 +176,9 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [navTargets, setNavTargets] = useState({});
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [showUpcoming, setShowUpcoming] = useState(false);
+  const [celebration, setCelebration] = useState(null);
+  const [celebrationDismissed, setCelebrationDismissed] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -134,8 +194,27 @@ export default function CoursesPage() {
       setSummary(summaryRes?.data ?? null);
       setLoading(false);
       loadNavTargets(courseList, completed);
+      checkLevelAdvance(courseList);
     });
   }, []);
+
+  function checkLevelAdvance(courseList) {
+    const freshLevel = courseList[0]?.user_level;
+    if (!freshLevel) return;
+    const storedLevel = localStorage.getItem("user_level");
+    const freshOrder = LEVELS.find((l) => l.key === freshLevel)?.order ?? 1;
+    const storedOrder = LEVELS.find((l) => l.key === storedLevel)?.order ?? 0;
+    if (storedLevel && freshOrder > storedOrder) {
+      const info = LEVELS.find((l) => l.key === freshLevel);
+      setCelebration({
+        new_level: freshLevel,
+        new_level_label_tj: info?.label || freshLevel,
+        courses: courseList.filter((c) => c.level === freshLevel).map((c) => c.title),
+      });
+      confetti({ particleCount: 140, spread: 90, origin: { y: 0.5 } });
+    }
+    localStorage.setItem("user_level", freshLevel);
+  }
 
   async function loadNavTargets(courseList, completed) {
     for (const course of courseList) {
@@ -167,14 +246,11 @@ export default function CoursesPage() {
   }
 
   function handleCourseAction(course) {
-    if (course.is_locked) return;
     const target = navTargets[course.id];
     if (target) {
       navigate(`/lessons/${target.id}`, { state: { courseId: target.courseId, moduleId: target.moduleId } });
     }
   }
-
-  const filteredCourses = courses.filter((c) => activeFilter === "all" || c.level === activeFilter);
 
   const overallTotal = summary?.total_lessons ?? 0;
   const overallCompleted = summary?.completed_lessons ?? 0;
@@ -182,6 +258,11 @@ export default function CoursesPage() {
 
   const userLevelKey = courses[0]?.user_level || "beginner";
   const userLevelOrder = courses[0]?.user_level_order || 1;
+  const currentLevelInfo = LEVELS.find((l) => l.key === userLevelKey);
+  const nextLevelInfo = LEVELS.find((l) => l.order === userLevelOrder + 1);
+
+  const currentLevelCourses = courses.filter((c) => c.level === userLevelKey);
+  const nextLevelCourses = nextLevelInfo ? courses.filter((c) => c.level === nextLevelInfo.key) : [];
 
   return (
     <div className="min-h-screen page-enter" style={{ background: "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)" }}>
@@ -214,7 +295,7 @@ export default function CoursesPage() {
           </div>
 
           {/* Level progression */}
-          {!loading && <LevelTrack courses={courses} userLevelOrder={userLevelOrder} userLevelKey={userLevelKey} />}
+          {!loading && <LevelTrack courses={courses} userLevelOrder={userLevelOrder} />}
 
           {/* Progress overview */}
           {!loading && (
@@ -232,92 +313,71 @@ export default function CoursesPage() {
             </div>
           )}
 
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1 mb-6 flex-wrap">
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
-                className="px-4 py-1.5 text-sm font-medium transition-all duration-150"
-                style={
-                  activeFilter === f.key
-                    ? { color: "white", borderBottom: "2px solid #14B8A6", paddingBottom: 4 }
-                    : { color: "rgba(255,255,255,0.4)", borderBottom: "2px solid transparent", paddingBottom: 4 }
-                }
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Course cards */}
+          {/* Current level courses */}
           {loading ? (
             <div className="grid sm:grid-cols-2 gap-5">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-52 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
               ))}
             </div>
-          ) : filteredCourses.length === 0 ? (
-            <div className="glass-card p-12 text-center">
-              <BookOpen size={48} style={{ color: "#14B8A6", margin: "0 auto 16px" }} />
-              <p style={{ color: "rgba(255,255,255,0.6)" }}>Курсҳо ҳанӯз нест. Зуд илова мешавад!</p>
-            </div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-5">
-              {filteredCourses.map((course) => {
-                const pct = course.completion_percentage ?? 0;
-                const total = course.total_lessons ?? 0;
-                const done = course.completed_lessons ?? 0;
-                const hasAny = done > 0;
-                const requiredLevel = LEVELS.find((l) => l.order === course.level_order - 1);
+            <>
+              <h2 className="text-lg font-medium mb-4" style={{ color: "white" }}>
+                Курсҳои {currentLevelInfo?.label} — {currentLevelInfo?.emoji}
+              </h2>
 
-                return (
-                  <div key={course.id} className="glass-card p-5 flex flex-col gap-3 relative" style={{ borderRadius: 6, overflow: "hidden" }}>
-                    <div>
-                      <LevelBadge level={course.level} />
-                    </div>
-                    <h3 className="text-base font-medium" style={{ color: "white" }}>{course.title}</h3>
-                    <p className="text-sm line-clamp-2" style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
-                      {course.description}
-                    </p>
-                    <div>
-                      <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(255,255,255,0.08)" }}>
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, background: "#14B8A6" }}
+              {currentLevelCourses.length === 0 ? (
+                <div className="glass-card p-12 text-center mb-8">
+                  <BookOpen size={48} style={{ color: "#14B8A6", margin: "0 auto 16px" }} />
+                  <p style={{ color: "rgba(255,255,255,0.6)" }}>Курсҳо ҳанӯз нест. Зуд илова мешавад!</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-5 mb-8">
+                  {currentLevelCourses.map((course) => (
+                    <CourseCard key={course.id} course={course} locked={false} onAction={handleCourseAction} />
+                  ))}
+                </div>
+              )}
+
+              {/* Upcoming (locked) level preview */}
+              {nextLevelInfo && nextLevelCourses.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowUpcoming((v) => !v)}
+                    className="flex items-center gap-2 mb-4"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 500 }}
+                  >
+                    Курсҳои оянда 🔒
+                    {showUpcoming ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+
+                  {showUpcoming && (
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      {nextLevelCourses.map((course) => (
+                        <CourseCard
+                          key={course.id}
+                          course={course}
+                          locked
+                          onAction={handleCourseAction}
+                          requiredLevelLabel={currentLevelInfo?.label}
                         />
-                      </div>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                        {done} аз {total} дарс
-                      </p>
+                      ))}
                     </div>
-                    <button
-                      onClick={() => handleCourseAction(course)}
-                      disabled={course.is_locked || total === 0}
-                      className="mt-auto w-full py-2.5 font-medium text-sm transition-all duration-200 hover:opacity-90 disabled:opacity-40"
-                      style={{ background: "#14B8A6", color: "#04231F", borderRadius: 6, border: "none", cursor: course.is_locked || total === 0 ? "not-allowed" : "pointer" }}
-                    >
-                      {hasAny ? "Идома деҳ" : "Оғоз кун"}
-                    </button>
-
-                    {course.is_locked && (
-                      <div
-                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4"
-                        style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(1px)" }}
-                      >
-                        <Lock size={26} style={{ color: "white" }} />
-                        <p style={{ color: "white", fontSize: 13, fontWeight: 500, margin: 0 }}>
-                          🔒 Барои кушодан сатҳи {requiredLevel?.label || ""}-ро тамом кун
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {celebration && !celebrationDismissed && (
+        <LevelUpModal
+          levelUp={celebration}
+          unlockedCourses={celebration.courses}
+          onClose={() => setCelebrationDismissed(true)}
+        />
+      )}
     </div>
   );
 }

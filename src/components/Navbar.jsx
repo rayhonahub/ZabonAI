@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem, BookOpen, Gamepad2, Puzzle, Zap, BarChart2, Sparkles, ShoppingBag, Trophy, X, Swords, PenLine, MessageCircle } from "lucide-react";
+import { Flame, Gem, BookOpen, Gamepad2, Puzzle, BarChart2, X, Swords, User, Sparkles } from "lucide-react";
 import api from "../api/axios";
 import { avatarUrl } from "../utils/avatar";
 
@@ -9,13 +9,8 @@ const links = [
   { to: "/duel", label: "Дуэл", Icon: Swords },
   { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
   { to: "/practice", label: "Машқ", Icon: Puzzle },
-  { to: "/daily", label: "Бозии ҳаррӯза", Icon: Zap },
-  { to: "/leaderboard", label: "Беҳтаринҳо", Icon: Trophy },
   { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
-  { to: "/ai", label: "ИИ Чат", Icon: Sparkles },
-  { to: "/writing", label: "Навиштан", Icon: PenLine },
-  { to: "/conversation", label: "Суҳбат", Icon: MessageCircle },
-  { to: "/shop", label: "Мағоза", Icon: ShoppingBag },
+  { to: "/profile", label: "Профил", Icon: User },
 ];
 
 export default function Navbar() {

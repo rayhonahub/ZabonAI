@@ -69,6 +69,14 @@ export default function PlacementTestPage() {
   const level = getLevel(correctCount);
 
   useEffect(() => {
+    const done = localStorage.getItem("placement_test_done");
+    if (done === "true") {
+      navigate("/courses");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (phase !== "result") return;
     api
       .get("/courses/")
