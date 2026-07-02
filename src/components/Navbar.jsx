@@ -11,11 +11,11 @@ const primaryLinks = [
   { to: "/courses", label: "Курсҳо", Icon: BookOpen },
   { to: "/duel", label: "Дуэл", Icon: Swords },
   { to: "/practice", label: "Машқ", Icon: Gamepad2 },
-  { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
   { to: "/profile", label: "Профил", Icon: User },
 ];
 
 const secondaryLinks = [
+  { to: "/profile?tab=progress", label: "Пешрафт", Icon: BarChart2 },
   { to: "/story", label: "Ҳикоя", Icon: BookMarked },
   { to: "/pronunciation", label: "Талаффуз", Icon: Mic },
   { to: "/vocabulary", label: "Такрор", Icon: RotateCcw },

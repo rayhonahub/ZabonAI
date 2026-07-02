@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
 import LandingPage from "./pages/LandingPage";
@@ -9,7 +9,6 @@ import OnboardingPage from "./pages/OnboardingPage";
 import CoursesPage from "./pages/CoursesPage";
 import LessonPage from "./pages/LessonPage";
 import QuizPage from "./pages/QuizPage";
-import ProgressPage from "./pages/ProgressPage";
 import AIChatPage from "./pages/AIChatPage";
 import WordGamePage from "./pages/WordGamePage";
 import DailyChallengePage from "./pages/DailyChallengePage";
@@ -93,14 +92,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/progress"
-            element={
-              <ProtectedRoute>
-                <ProgressPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/progress" element={<Navigate to="/profile" replace />} />
           <Route
             path="/ai"
             element={
