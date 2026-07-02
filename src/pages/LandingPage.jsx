@@ -9,37 +9,37 @@ const FEATURES = [
     Icon: Sparkles,
     color: "#14B8A6",
     title: "AI Tutor",
-    sub: "AI Репетитор",
-    desc: "Объясняет на русском и таджикском языках",
+    sub: "AI Омӯзгор",
+    desc: "Ба забони тоҷикӣ мефаҳмонад",
   },
   {
     Icon: Brain,
     color: "#FBBF24",
     title: "Smart Quiz",
-    sub: "Умный тест",
-    desc: "Тест после каждого урока — учись умнее",
+    sub: "Санҷиши оқилона",
+    desc: "Санҷиш баъди ҳар дарс — оқилона омӯз",
   },
   {
     Icon: Camera,
     color: "#14B8A6",
     title: "Screenshot Help",
-    sub: "Помощь по скриншоту",
-    desc: "Загрузи скриншот — AI объяснит всё",
+    sub: "Ёрӣ бо скриншот",
+    desc: "Скриншотро бор кун — AI ҳамаашро мефаҳмонад",
   },
 ];
 
 const TESTIMONIALS = [
   {
     name: "Сабина, Душанбе",
-    text: "AI объясняет ошибки так просто, что я наконец поняла разницу между Present Simple и Continuous!",
+    text: "AI хатоҳоямро хеле содда мефаҳмонад, ки ман фарқи Present Simple ва Continuous-ро фаҳмидам!",
   },
   {
-    name: "Фаррух, Худжанд",
-    text: "Бо ёрии AI-репетитор ман дар як моҳ хеле пешрафт кардам. Бениҳоят осон ва фаҳмо!",
+    name: "Фаррух, Худҷанд",
+    text: "Бо ёрии AI-омӯзгор ман дар як моҳ хеле пешрафт кардам. Бениҳоят осон ва фаҳмо!",
   },
   {
-    name: "Нилуфар, Бухара",
-    text: "Word Match и ежедневный вызов делают учёбу похожей на игру, а не на домашку.",
+    name: "Нилуфар, Бухоро",
+    text: "Word Match ва масъалаи ҳаррӯза таълимро ба бозӣ монанд мекунанд, на ба вазифаи хонагӣ.",
   },
 ];
 
@@ -234,7 +234,7 @@ export default function LandingPage() {
 
       {/* Testimonials */}
       <div className="max-w-5xl mx-auto px-6 sm:px-10 pb-24">
-        <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: 'white' }}>Отзывы учеников</h2>
+        <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: 'white' }}>Фикри омӯзандагон</h2>
         <p className="text-sm text-center mb-12" style={{ color: 'rgba(255,255,255,0.4)' }}>What learners say</p>
         <div className="grid sm:grid-cols-3 gap-5">
           {TESTIMONIALS.map((t) => (

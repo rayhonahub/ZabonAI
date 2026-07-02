@@ -3,20 +3,24 @@ import Logo from "../components/Logo";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function NotFoundPage() {
-  usePageTitle("Page Not Found");
+  usePageTitle("Саҳифа ёфт нашуд");
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)' }}
+    >
       <div className="text-center animate-fade-in">
         <div className="flex justify-center mb-4">
           <Logo size="medium" />
         </div>
-        <h1 className="text-5xl font-extrabold text-navy mb-2">404</h1>
-        <p className="text-slate-500 mb-8">Page not found / Страница не найдена</p>
+        <h1 className="text-5xl font-extrabold mb-2" style={{ color: 'white' }}>404</h1>
+        <p className="mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>Саҳифа ёфт нашуд</p>
         <Link
           to="/"
-          className="inline-block px-6 py-3 rounded-xl font-semibold text-navy-dark bg-gradient-to-r from-gold-light to-gold shadow-lg shadow-gold/30 hover:shadow-gold/50 hover:-translate-y-0.5 transition-all duration-200"
+          className="inline-block px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:-translate-y-0.5"
+          style={{ background: '#14B8A6', color: '#04231F' }}
         >
-          Go Home / На главную
+          Бозгашт ба саҳифаи асосӣ
         </Link>
       </div>
     </div>

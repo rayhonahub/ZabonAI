@@ -1,27 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Gem, BookOpen, Gamepad2, Puzzle, BarChart2, X, Swords, User, Sparkles, Mic, MessageCircle } from "lucide-react";
+import {
+  Flame, Gem, BookOpen, Gamepad2, Puzzle, BarChart2, X, Swords, User, Sparkles,
+  Mic, MessageCircle, ChevronDown, BookMarked, RotateCcw, PenLine, Trophy, Zap,
+} from "lucide-react";
 import api from "../api/axios";
 import { avatarUrl } from "../utils/avatar";
 
-const links = [
+const primaryLinks = [
   { to: "/courses", label: "Курсҳо", Icon: BookOpen },
   { to: "/duel", label: "Дуэл", Icon: Swords },
-  { to: "/game", label: "Бозӣ", Icon: Gamepad2 },
-  { to: "/practice", label: "Машқ", Icon: Puzzle },
-  { to: "/pronunciation", label: "Талаффуз", Icon: Mic },
-  { to: "/conversation", label: "Чат", Icon: MessageCircle },
+  { to: "/practice", label: "Машқ", Icon: Gamepad2 },
   { to: "/progress", label: "Пешрафт", Icon: BarChart2 },
   { to: "/profile", label: "Профил", Icon: User },
 ];
 
+const secondaryLinks = [
+  { to: "/story", label: "Ҳикоя", Icon: BookMarked },
+  { to: "/pronunciation", label: "Талаффуз", Icon: Mic },
+  { to: "/vocabulary", label: "Такрор", Icon: RotateCcw },
+  { to: "/conversation", label: "Суҳбат", Icon: MessageCircle },
+  { to: "/writing", label: "Навиштан", Icon: PenLine },
+  { to: "/leaderboard", label: "Беҳтаринҳо", Icon: Trophy },
+  { to: "/daily", label: "Ҳаррӯза", Icon: Zap },
+  { to: "/game", label: "Бозӣ", Icon: Puzzle },
+];
+
+const links = [...primaryLinks, ...secondaryLinks];
+
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [coins, setCoins] = useState(Number(localStorage.getItem("coins") || 0));
   const [streakToast, setStreakToast] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const moreRef = useRef(null);
 
   useEffect(() => {
     api
@@ -46,12 +61,25 @@ export default function Navbar() {
 
   useEffect(() => {
     setMenuOpen(false);
+    setMoreOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (moreRef.current && !moreRef.current.contains(e.target)) {
+        setMoreOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function handleLogout() {
     localStorage.removeItem("token");
     navigate("/login");
   }
+
+  const isSecondaryActive = secondaryLinks.some((l) => location.pathname.startsWith(l.to));
 
   return (
     <header
@@ -82,7 +110,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {primaryLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -112,6 +140,73 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
+
+          <div className="relative" ref={moreRef}>
+            <button
+              onClick={() => setMoreOpen((v) => !v)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded text-sm font-medium transition-all duration-200 hover:-translate-y-0.5"
+              style={isSecondaryActive
+                ? { background: 'rgba(45,212,191,0.12)', color: '#2DD4BF', borderBottom: '2px solid #2DD4BF' }
+                : { color: 'rgba(255,255,255,0.6)' }
+              }
+              onMouseEnter={(e) => {
+                if (!isSecondaryActive) {
+                  e.currentTarget.style.background = 'rgba(45,212,191,0.07)';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSecondaryActive) {
+                  e.currentTarget.style.background = '';
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                }
+              }}
+            >
+              Бештар
+              <ChevronDown size={14} style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+            </button>
+
+            {moreOpen && (
+              <div
+                className="absolute"
+                style={{
+                  top: 'calc(100% + 6px)',
+                  right: 0,
+                  background: 'rgba(6,26,28,0.95)',
+                  border: '1px solid rgba(45,212,191,0.2)',
+                  borderRadius: 6,
+                  padding: 8,
+                  minWidth: 180,
+                  zIndex: 100,
+                }}
+              >
+                {secondaryLinks.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="flex items-center gap-2 text-sm font-medium transition-colors duration-150"
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: 4,
+                      color: location.pathname.startsWith(l.to) ? '#2DD4BF' : 'rgba(255,255,255,0.7)',
+                      background: location.pathname.startsWith(l.to) ? 'rgba(45,212,191,0.08)' : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(45,212,191,0.08)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = location.pathname.startsWith(l.to) ? 'rgba(45,212,191,0.08)' : 'transparent';
+                      e.currentTarget.style.color = location.pathname.startsWith(l.to) ? '#2DD4BF' : 'rgba(255,255,255,0.7)';
+                    }}
+                  >
+                    <l.Icon size={14} />
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
@@ -246,7 +341,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          <nav className="flex-1 px-3 py-3 space-y-1">
+          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
             {links.map((l) => (
               <Link
                 key={l.to}

@@ -9,13 +9,13 @@ import { usePageTitle } from "../hooks/usePageTitle";
 const TAB_CONFIG = {
   grammar: {
     label: "Grammar Check",
-    sub: "Проверка грамматики",
+    sub: "Санҷиши грамматика",
     storageKey: "grammar_chat",
     backendType: "grammar",
-    placeholder: "Type a sentence to check / Введите предложение...",
+    placeholder: "Ҷумларо барои санҷиш нависед...",
     tabActive: "bg-emerald-600 text-white shadow-sm",
     userBubble: "bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
-    aiBubble: "bg-emerald-50 border-emerald-200 text-slate-700",
+    aiBubble: "bg-emerald-500/10 border-emerald-500/30 text-white/90",
     badge: "bg-emerald-100 text-emerald-700",
     sendBtn: "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-500/30 hover:shadow-emerald-500/50",
     focusRing: "focus:border-emerald-500 focus:ring-emerald-500/10",
@@ -23,13 +23,13 @@ const TAB_CONFIG = {
   },
   tutor: {
     label: "Ask Tutor",
-    sub: "Спросить репетитора",
+    sub: "Аз омӯзгор пурсидан",
     storageKey: "tutor_chat",
     backendType: "tutor",
-    placeholder: "Ask your tutor a question / Задайте вопрос...",
+    placeholder: "Ба омӯзгор савол диҳед...",
     tabActive: "bg-blue-600 text-white shadow-sm",
     userBubble: "bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
-    aiBubble: "bg-blue-50 border-blue-200 text-slate-700",
+    aiBubble: "bg-blue-500/10 border-blue-500/30 text-white/90",
     badge: "bg-blue-100 text-blue-700",
     sendBtn: "bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30 hover:shadow-blue-500/50",
     focusRing: "focus:border-blue-500 focus:ring-blue-500/10",
@@ -40,10 +40,10 @@ const TAB_CONFIG = {
     sub: "Скриншот",
     storageKey: "screenshot_chat",
     backendType: "screenshot",
-    placeholder: "Add a question about the image (optional) / Вопрос к изображению...",
+    placeholder: "Дар бораи расм савол диҳед (ихтиёрӣ)...",
     tabActive: "bg-purple-600 text-white shadow-sm",
     userBubble: "bg-purple-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
-    aiBubble: "bg-purple-50 border-purple-200 text-slate-700",
+    aiBubble: "bg-purple-500/10 border-purple-500/30 text-white/90",
     badge: "bg-purple-100 text-purple-700",
     sendBtn: "bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30 hover:shadow-purple-500/50",
     focusRing: "focus:border-purple-500 focus:ring-purple-500/10",
@@ -51,13 +51,13 @@ const TAB_CONFIG = {
   },
   voice: {
     label: "🎤 Voice",
-    sub: "Голосовая практика",
+    sub: "Машқи овозӣ",
     storageKey: "voice_chat",
     backendType: "voice",
     placeholder: "",
     tabActive: "bg-rose-600 text-white shadow-sm",
     userBubble: "bg-rose-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm",
-    aiBubble: "bg-rose-50 border-rose-200 text-slate-700",
+    aiBubble: "bg-rose-500/10 border-rose-500/30 text-white/90",
     badge: "bg-rose-100 text-rose-700",
     sendBtn: "bg-gradient-to-r from-rose-500 to-rose-600 shadow-rose-500/30 hover:shadow-rose-500/50",
     focusRing: "focus:border-rose-500 focus:ring-rose-500/10",
@@ -227,7 +227,7 @@ export default function AIChatPage() {
         updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
         updateMessage(setFn, tempId, {
-          response: err.response?.data?.detail || "Error / Ошибка",
+          response: err.response?.data?.detail || "Хато",
           pending: false,
           isError: true,
         });
@@ -248,7 +248,7 @@ export default function AIChatPage() {
         updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
         updateMessage(setFn, tempId, {
-          response: err.response?.data?.detail || "Error / Ошибка",
+          response: err.response?.data?.detail || "Хато",
           pending: false,
           isError: true,
         });
@@ -277,7 +277,7 @@ export default function AIChatPage() {
         updateMessage(setFn, tempId, { response: res.data.response, pending: false });
       } catch (err) {
         updateMessage(setFn, tempId, {
-          response: err.response?.data?.detail || "Error / Ошибка",
+          response: err.response?.data?.detail || "Хато",
           pending: false,
           isError: true,
         });
@@ -340,22 +340,23 @@ export default function AIChatPage() {
   const canSend = activeTab === "screenshot" ? !!screenshotFile : !!currentText.trim();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)' }}>
       <Navbar />
 
       <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 flex-1 flex flex-col">
-        <h1 className="text-2xl font-extrabold text-navy mb-1">AI Tutor</h1>
-        <p className="text-slate-500 mb-6">AI Репетитор</p>
+        <h1 className="text-2xl font-extrabold mb-1" style={{ color: 'white' }}>AI Tutor</h1>
+        <p className="mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>AI Омӯзгор</p>
 
         <div className="flex items-center justify-between gap-2 mb-5 flex-wrap">
-          <div className="flex gap-1 bg-white rounded-xl shadow-card p-1.5 w-full sm:w-fit">
+          <div className="glass-card flex gap-1 rounded-xl p-1.5 w-full sm:w-fit">
             {TAB_ORDER.map((key) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  activeTab === key ? TAB_CONFIG[key].tabActive : "text-slate-500 hover:bg-slate-50"
+                  activeTab === key ? TAB_CONFIG[key].tabActive : "hover:bg-white/5"
                 }`}
+                style={activeTab === key ? undefined : { color: 'rgba(255,255,255,0.6)' }}
               >
                 {TAB_CONFIG[key].label}
               </button>
@@ -365,16 +366,17 @@ export default function AIChatPage() {
           <button
             onClick={clearChat}
             disabled={messages.length === 0}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-red-500 disabled:opacity-40 disabled:hover:text-slate-400 transition-colors duration-150 px-2"
+            className="flex items-center gap-1.5 text-xs font-semibold hover:text-red-400 disabled:opacity-40 transition-colors duration-150 px-2"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
           >
             <TrashIcon />
-            Clear chat / Очистить
+            Пок кардан
           </button>
         </div>
 
         <div
           ref={scrollRef}
-          className="flex-1 bg-white rounded-2xl shadow-card p-4 sm:p-6 mb-4 overflow-y-auto max-h-[55vh] min-h-[320px] flex flex-col gap-4"
+          className="glass-card flex-1 rounded-2xl p-4 sm:p-6 mb-4 overflow-y-auto max-h-[55vh] min-h-[320px] flex flex-col gap-4"
         >
           {historyLoading && (
             <div className="space-y-3">
@@ -391,10 +393,10 @@ export default function AIChatPage() {
           )}
 
           {!historyLoading && messages.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 py-10">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-10" style={{ color: 'rgba(255,255,255,0.4)' }}>
               <p className="text-3xl mb-2">💬</p>
-              <p className="text-sm">Start the conversation / Начни разговор</p>
-              <p className="text-xs text-slate-300 mt-1">{cfg.sub}</p>
+              <p className="text-sm">Сӯҳбатро оғоз кун</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{cfg.sub}</p>
             </div>
           )}
 
@@ -415,7 +417,7 @@ export default function AIChatPage() {
               <div className="flex justify-start">
                 <div
                   className={`max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm shadow-sm border ${
-                    m.isError ? "bg-red-50 border-red-100 text-red-600" : cfg.aiBubble
+                    m.isError ? "bg-red-500/10 border-red-500/30 text-red-400" : cfg.aiBubble
                   }`}
                 >
                   {m.pending ? <TypingDots dotClass={cfg.dot} /> : <p className="whitespace-pre-wrap">{m.response}</p>}
@@ -425,7 +427,7 @@ export default function AIChatPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           {activeTab === "voice" ? (
             <div className="flex flex-col items-center text-center py-2">
               <button
@@ -438,28 +440,28 @@ export default function AIChatPage() {
                 <MicIcon />
               </button>
 
-              <p className="text-sm text-slate-500 mb-4">
-                {voiceStatus === "idle" && "Нажми кнопку и говори по-английски"}
-                {voiceStatus === "recording" && "🔴 Запись... говори сейчас!"}
-                {voiceStatus === "processing" && "⏳ Обрабатываем..."}
-                {voiceStatus === "error" && "❌ Не удалось распознать речь / Voice not supported"}
-                {voiceStatus === "done" && "✅ Готово"}
+              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                {voiceStatus === "idle" && "Тугмаро пахш кун ва бо забони англисӣ гап зан"}
+                {voiceStatus === "recording" && "🔴 Сабт... ҳозир гап зан!"}
+                {voiceStatus === "processing" && "⏳ Коркард шуда истодааст..."}
+                {voiceStatus === "error" && "❌ Овоз шинохта нашуд"}
+                {voiceStatus === "done" && "✅ Тайёр"}
               </p>
 
               {voiceStatus === "done" && (
                 <div className="text-left w-full space-y-2 mb-4">
-                  <p className="text-sm bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                    📝 You said: {voiceRecognizedText}
+                  <p className="text-sm rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
+                    📝 Ту гуфтӣ: {voiceRecognizedText}
                   </p>
-                  <p className="text-sm bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 whitespace-pre-wrap">
-                    🤖 AI Feedback: {voiceAiResponse}
+                  <p className="text-sm rounded-lg px-3 py-2 whitespace-pre-wrap" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', color: 'rgba(255,255,255,0.85)' }}>
+                    🤖 Ҷавоби AI: {voiceAiResponse}
                   </p>
                 </div>
               )}
 
               {(voiceStatus === "done" || voiceStatus === "error") && (
-                <button onClick={startVoiceRecording} className="text-sm font-semibold text-rose-600 hover:underline">
-                  Try Again / Попробовать снова
+                <button onClick={startVoiceRecording} className="text-sm font-semibold text-rose-400 hover:underline">
+                  Аз нав кӯшиш кун
                 </button>
               )}
             </div>
@@ -469,8 +471,9 @@ export default function AIChatPage() {
             <input
               value={tutorLessonId}
               onChange={(e) => setTutorLessonId(e.target.value)}
-              placeholder="Lesson ID (optional) / ID урока (необязательно)"
-              className={`w-full mb-3 px-3 py-2 text-sm rounded-lg border border-slate-200 outline-none transition-all duration-200 ${cfg.focusRing} focus:ring-2`}
+              placeholder="ID-и дарс (ихтиёрӣ)"
+              className={`w-full mb-3 px-3 py-2 text-sm rounded-lg outline-none transition-all duration-200 ${cfg.focusRing} focus:ring-2`}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', color: 'white' }}
             />
           )}
 
@@ -483,9 +486,11 @@ export default function AIChatPage() {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`mb-3 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ${
-                dragOver ? "border-purple-400 bg-purple-50" : "border-slate-200 hover:border-purple-300"
-              }`}
+              className="mb-3 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200"
+              style={dragOver
+                ? { borderColor: '#C084FC', background: 'rgba(192,132,252,0.08)' }
+                : { borderColor: 'rgba(255,255,255,0.15)' }
+              }
             >
               <input
                 ref={fileInputRef}
@@ -494,16 +499,14 @@ export default function AIChatPage() {
                 className="hidden"
                 onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
               />
-              <span className="text-purple-500 mb-1">
+              <span className="text-purple-400 mb-1">
                 <UploadIcon />
               </span>
               {screenshotFile ? (
-                <p className="text-sm font-medium text-purple-700">{screenshotFile.name}</p>
+                <p className="text-sm font-medium text-purple-300">{screenshotFile.name}</p>
               ) : (
-                <p className="text-sm text-slate-400">
-                  Drag & drop an image, or click to browse
-                  <br />
-                  Перетащите изображение или нажмите
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Расмро кашед ё барои интихоб клик кунед
                 </p>
               )}
             </div>
@@ -521,7 +524,8 @@ export default function AIChatPage() {
                 }
               }}
               placeholder={cfg.placeholder}
-              className={`flex-1 resize-none px-4 py-3 rounded-xl border border-slate-200 outline-none transition-all duration-200 text-sm ${cfg.focusRing} focus:ring-2`}
+              className={`flex-1 resize-none px-4 py-3 rounded-xl outline-none transition-all duration-200 text-sm ${cfg.focusRing} focus:ring-2`}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', color: 'white' }}
             />
             <button
               onClick={handleSend}
@@ -536,8 +540,8 @@ export default function AIChatPage() {
         </div>
 
         {activeTab === "voice" && (
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mt-4 text-sm text-slate-600">
-            <p className="font-semibold text-amber-700 mb-2">💡 Tips for voice practice / Советы:</p>
+          <div className="rounded-2xl p-4 mt-4 text-sm" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', color: 'rgba(255,255,255,0.7)' }}>
+            <p className="font-semibold mb-2" style={{ color: '#FBBF24' }}>💡 Маслиҳатҳо барои машқи талаффуз:</p>
             <ul className="space-y-1 list-disc pl-5">
               <li>Speak slowly and clearly</li>
               <li>Use complete sentences</li>

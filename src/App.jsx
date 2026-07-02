@@ -23,6 +23,8 @@ import DuelPage from "./pages/DuelPage";
 import WritingPracticePage from "./pages/WritingPracticePage";
 import ConversationPage from "./pages/ConversationPage";
 import PronunciationPage from "./pages/PronunciationPage";
+import StoryPage from "./pages/StoryPage";
+import VocabularyReviewPage from "./pages/VocabularyReviewPage";
 
 export default function App() {
   const location = useLocation();
@@ -61,6 +63,14 @@ export default function App() {
 
           <Route
             path="/courses"
+            element={
+              <ProtectedRoute>
+                <CoursesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses/:courseId/modules"
             element={
               <ProtectedRoute>
                 <CoursesPage />
@@ -184,6 +194,24 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PronunciationPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/story"
+            element={
+              <ProtectedRoute>
+                <StoryPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/vocabulary"
+            element={
+              <ProtectedRoute>
+                <VocabularyReviewPage />
               </ProtectedRoute>
             }
           />
