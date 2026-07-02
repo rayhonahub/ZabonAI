@@ -400,6 +400,230 @@ IMPORTANT RULES:
     return {"reply": ai_reply, "scenario": scenario}
 
 
+@router.post("/generate-story")
+def generate_personal_story(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    AI generates a short story personalized for user's level
+    using words from completed lessons
+    """
+    import json as json_lib
+
+    # Get user level
+    user_level = getattr(current_user, 'selected_level', 'beginner') or 'beginner'
+
+    # Get words from completed lessons
+    completed_progress = db.query(models.UserProgress).filter(
+        models.UserProgress.user_id == current_user.id,
+        models.UserProgress.completed == True
+    ).all()
+
+    lesson_ids = [p.lesson_id for p in completed_progress]
+    known_words = []
+
+    if lesson_ids:
+        lessons = db.query(models.Lesson).filter(
+            models.Lesson.id.in_(lesson_ids)
+        ).limit(5).all()
+
+        for lesson in lessons:
+            if lesson.content:
+                import re
+                words = re.findall(r'\*\*([a-zA-Z]+)\*\*', lesson.content)
+                known_words.extend(words[:5])
+
+    if not known_words:
+        known_words = ["hello", "school", "friend", "water", "home",
+                      "teacher", "book", "family", "learn", "happy"]
+
+    known_words_str = ", ".join(set(known_words[:15]))
+
+    level_instructions = {
+        "beginner": "very simple sentences, max 8 words each, A1 level vocabulary",
+        "elementary": "simple sentences, A2 level, some variety",
+        "intermediate": "normal sentences, B1 level, more complex ideas",
+        "advanced": "natural English, B2 level, varied sentence structure"
+    }
+
+    prompt = f"""
+You are creating a personalized English reading story for a Tajik speaker.
+
+Student level: {user_level}
+Words they know: {known_words_str}
+Story requirements: {level_instructions.get(user_level, level_instructions['beginner'])}
+
+Create a short story (150-200 words) that:
+1. Uses most of the known words naturally
+2. Adds exactly 5 NEW words (mark them with ** on both sides like **word**)
+3. Has a simple, engaging plot (daily life, adventure, or friendship theme)
+4. Is appropriate and educational
+
+Return ONLY this JSON, no extra text:
+{{
+  "title_en": "Story Title in English",
+  "title_tj": "Номи ҳикоя ба тоҷикӣ",
+  "story": "Full story text here with **new_words** marked",
+  "new_words": [
+    {{"word": "word1", "translation_tj": "тарҷума1", "phonetic": "/fəˈnetɪk/"}},
+    {{"word": "word2", "translation_tj": "тарҷума2", "phonetic": "/fəˈnetɪk/"}},
+    {{"word": "word3", "translation_tj": "тарҷума3", "phonetic": "/fəˈnetɪk/"}},
+    {{"word": "word4", "translation_tj": "тарҷума4", "phonetic": "/fəˈnetɪk/"}},
+    {{"word": "word5", "translation_tj": "тарҷума5", "phonetic": "/fəˈnetɪk/"}}
+  ],
+  "comprehension_questions": [
+    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}},
+    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}},
+    {{"question_en": "Question?", "question_tj": "Савол ба тоҷикӣ?", "answer": "Answer"}}
+  ]
+}}
+"""
+    try:
+        response = ai_service.model.generate_content(prompt)
+        text = response.text.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        result = json_lib.loads(text)
+
+        history = models.AIChatHistory(
+            user_id=current_user.id,
+            message=f"[STORY] level={user_level}",
+            response=json_lib.dumps(result, ensure_ascii=False),
+            chat_type="story"
+        )
+        db.add(history)
+        db.commit()
+        return result
+    except Exception as e:
+        return {
+            "title_en": "My English Day",
+            "title_tj": "Рӯзи англисии ман",
+            "story": "Sara wakes up early. She goes to **school** with her friend Ali. They study **English** together. The teacher is very **kind**. Sara learns new **vocabulary** every day. She is very **proud** of herself.",
+            "new_words": [
+                {"word": "kind", "translation_tj": "меҳрубон", "phonetic": "/kaɪnd/"},
+                {"word": "vocabulary", "translation_tj": "луғат", "phonetic": "/vəˈkæbjəleri/"},
+                {"word": "proud", "translation_tj": "ифтихордор", "phonetic": "/praʊd/"},
+                {"word": "early", "translation_tj": "барвақт", "phonetic": "/ˈɜːrli/"},
+                {"word": "together", "translation_tj": "якҷоя", "phonetic": "/təˈɡeðər/"}
+            ],
+            "comprehension_questions": [
+                {"question_en": "Who goes to school?", "question_tj": "Кӣ ба мактаб меравад?", "answer": "Sara"},
+                {"question_en": "Who does Sara study with?", "question_tj": "Сара бо кӣ мехонад?", "answer": "Ali"},
+                {"question_en": "How does Sara feel?", "question_tj": "Сара чӣ ҳис мекунад?", "answer": "Proud"}
+            ]
+        }
+
+
+@router.get("/weekly-digest")
+def get_weekly_digest(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    AI generates personalized weekly progress report in Tajik
+    """
+    import json as json_lib
+    from datetime import datetime, timedelta
+
+    # Gather week's stats
+    week_ago = datetime.utcnow() - timedelta(days=7)
+
+    weekly_progress = db.query(models.UserProgress).filter(
+        models.UserProgress.user_id == current_user.id,
+        models.UserProgress.completed == True,
+        models.UserProgress.completed_at >= week_ago
+    ).all()
+
+    lessons_this_week = len(weekly_progress)
+    scores = [p.score for p in weekly_progress if p.score is not None]
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
+
+    # Get lesson titles
+    lesson_ids = [p.lesson_id for p in weekly_progress[:3]]
+    lessons = db.query(models.Lesson).filter(
+        models.Lesson.id.in_(lesson_ids)
+    ).all()
+    lesson_titles = [l.title for l in lessons]
+
+    user_name = current_user.full_name.split()[0] if current_user.full_name else "Дӯст"
+    streak = current_user.streak or 0
+    coins = getattr(current_user, 'coins', 0) or 0
+    level = getattr(current_user, 'selected_level', 'beginner') or 'beginner'
+
+    level_tj = {
+        "beginner": "Ибтидоӣ",
+        "elementary": "Миёна",
+        "intermediate": "Болотар",
+        "advanced": "Баланд"
+    }.get(level, "Ибтидоӣ")
+
+    prompt = f"""
+You are a motivational English learning coach writing a weekly progress report in Tajik language.
+
+Student info:
+- Name: {user_name}
+- Level: {level_tj}
+- Lessons completed this week: {lessons_this_week}
+- Average quiz score: {avg_score}%
+- Current streak: {streak} days
+- Coins earned: {coins}
+- Lessons studied: {', '.join(lesson_titles) if lesson_titles else 'none yet'}
+
+Write a warm, encouraging weekly digest in TAJIK language only. Structure:
+{{
+  "greeting": "Ҳафтаи хуш, [name]! ...",
+  "achievements": "дастовардҳои ин ҳафта...",
+  "stats_summary": "рақамҳо ва натиҷаҳо...",
+  "improvement_tip": "маслиҳати беҳтарсозӣ барои ҳафтаи оянда...",
+  "motivation": "сухани ташвиқии охирин...",
+  "next_goal": "ҳадафи ҳафтаи оянда..."
+}}
+
+Make it personal, warm and encouraging. Use the student's name.
+ALL text must be in Tajik language only. No Russian.
+"""
+    try:
+        response = ai_service.model.generate_content(prompt)
+        text = response.text.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        digest = json_lib.loads(text)
+
+        return {
+            "digest": digest,
+            "stats": {
+                "lessons_this_week": lessons_this_week,
+                "avg_score": avg_score,
+                "streak": streak,
+                "coins": coins,
+                "level": level_tj
+            }
+        }
+    except Exception as e:
+        return {
+            "digest": {
+                "greeting": f"Ҳафтаи хуш, {user_name}!",
+                "achievements": f"Ин ҳафта шумо {lessons_this_week} дарс гузаштед. Аъло!",
+                "stats_summary": f"Миёнаи натиҷа: {avg_score}%. Силсила: {streak} рӯз.",
+                "improvement_tip": "Ҳар рӯз ҳадди аққал 1 дарс гузаред.",
+                "motivation": "Шумо метавонед! Давом диҳед!",
+                "next_goal": f"Ҳафтаи оянда {lessons_this_week + 2} дарс гузаред."
+            },
+            "stats": {
+                "lessons_this_week": lessons_this_week,
+                "avg_score": avg_score,
+                "streak": streak,
+                "coins": coins,
+                "level": level_tj
+            }
+        }
+
+
 @router.get("/weak-topics-advice")
 def weak_topics_advice(
     db: Session = Depends(get_db),
