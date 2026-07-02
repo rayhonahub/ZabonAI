@@ -73,6 +73,10 @@ async def duel_websocket(
         await websocket.close()
         return
 
+    # Allow same user to test both sides
+    if str(user_id) in room["player_names"] and len(room["players"]) < 2:
+        user_id = f"{user_id}-2"
+
     room["players"].append(websocket)
     room["player_names"][str(user_id)] = user_name
     room["scores"][str(user_id)] = 0
