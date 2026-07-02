@@ -565,6 +565,9 @@ After "I think that" and "In my opinion", use a full sentence with subject + ver
 ]
 
 
+LEVEL_ORDER_MAP = {"beginner": 1, "elementary": 2, "intermediate": 3, "advanced": 4}
+
+
 def seed_courses_modules_lessons(db):
     lesson_ids = []
     for c_idx, course_data in enumerate(COURSES, start=1):
@@ -577,6 +580,7 @@ def seed_courses_modules_lessons(db):
             title=course_data["title"],
             description=course_data["description"],
             level=course_data["level"],
+            level_order=LEVEL_ORDER_MAP.get(course_data["level"], 1),
         )
         db.add(course)
         db.commit()

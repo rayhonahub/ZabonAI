@@ -117,12 +117,18 @@ class QuizResultItem(BaseModel):
     correct_option_text: str
     user_option_text: Optional[str] = None
 
+class LevelUpInfo(BaseModel):
+    unlocked: bool
+    new_level: str
+    new_level_label_tj: str
+
 class QuizResult(BaseModel):
     score: float
     total: int
     correct: int
     weak_topic: bool
     results: List[QuizResultItem]
+    level_up: Optional[LevelUpInfo] = None
 
 
 
@@ -158,6 +164,7 @@ class ProfileUpdate(BaseModel):
     avatar_style: Optional[str] = None
     avatar_seed: Optional[str] = None
     selected_language: Optional[str] = None
+    selected_level: Optional[str] = None
 
 class ProfileResponse(BaseModel):
     id: int
@@ -173,6 +180,7 @@ class ProfileResponse(BaseModel):
     xp_points: int
     level: str
     level_label: str
+    selected_level: str
     total_lessons_completed: int
     total_quizzes_passed: int
     travel_completed: bool = False

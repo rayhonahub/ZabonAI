@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.deps import get_db, get_current_user
 from app.level_utils import level_from_xp, level_label
+from app.services.level_service import LEVEL_ORDER
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -45,6 +46,7 @@ def build_profile_response(db: Session, user: models.User) -> schemas.ProfileRes
         xp_points=user.xp_points,
         level=user.level,
         level_label=level_label(user.level),
+        selected_level=user.selected_level or "beginner",
         total_lessons_completed=user.total_lessons_completed,
         total_quizzes_passed=user.total_quizzes_passed,
         travel_completed=is_travel_course_completed(db, user),
@@ -80,6 +82,10 @@ def update_profile(
         if data.selected_language not in ("ru", "tj", "en"):
             raise HTTPException(status_code=400, detail="selected_language must be ru, tj, or en")
         current_user.selected_language = data.selected_language
+    if data.selected_level is not None:
+        if data.selected_level not in LEVEL_ORDER:
+            raise HTTPException(status_code=400, detail="selected_level must be beginner, elementary, intermediate, or advanced")
+        current_user.selected_level = data.selected_level
 
     db.commit()
     db.refresh(current_user)

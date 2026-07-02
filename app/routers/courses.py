@@ -2,13 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.deps import get_db, get_current_user
+from app.services.level_service import get_courses_for_user
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
 
 
-@router.get("/", response_model=list[schemas.CourseResponse])
-def get_courses(db: Session = Depends(get_db)):
-    return db.query(models.Course).all()
+@router.get("/")
+def get_courses(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get all courses with lock status and progress based on the user's level."""
+    return get_courses_for_user(current_user.id, db)
 
 
 @router.get("/{course_id}", response_model=schemas.CourseResponse)

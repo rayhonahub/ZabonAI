@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.deps import get_db, get_current_user
 from app.level_utils import level_from_xp
+from app.services.level_service import unlock_next_level_if_earned
 from datetime import datetime, date
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
@@ -173,7 +174,13 @@ def submit_quiz(
         current_user.level = level_from_xp(current_user.xp_points)
 
     db.commit()
-    return schemas.QuizResult(score=score, total=total, correct=correct, weak_topic=weak_topic, results=results)
+
+    level_up = unlock_next_level_if_earned(current_user.id, db)
+
+    return schemas.QuizResult(
+        score=score, total=total, correct=correct, weak_topic=weak_topic,
+        results=results, level_up=level_up,
+    )
 
 
 @router.post("/questions/{lesson_id}", response_model=schemas.QuizQuestionResponse)

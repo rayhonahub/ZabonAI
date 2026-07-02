@@ -22,6 +22,11 @@ class Course(Base):
     level = Column(String, default="beginner")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # 1=beginner, 2=elementary, 3=intermediate, 4=advanced
+    level_order = Column(Integer, default=1)
+    is_locked_by_default = Column(Boolean, default=False)
+    required_previous_level = Column(String, nullable=True)
+
     modules = relationship("Module", back_populates="course")
 
 
@@ -95,6 +100,36 @@ class AIChatHistory(Base):
     user = relationship("User", back_populates="chat_history")
 
 
+class VocabularyReview(Base):
+    __tablename__ = "vocabulary_reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    word = Column(String, nullable=False)
+    translation = Column(String, nullable=False)
+    ease_factor = Column(Float, default=2.5)
+    interval_days = Column(Integer, default=1)
+    next_review_at = Column(DateTime, default=datetime.utcnow)
+    correct_count = Column(Integer, default=0)
+    total_reviews = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="vocabulary_reviews")
+
+
+class UserCourseProgress(Base):
+    __tablename__ = "user_course_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    completed_lessons = Column(Integer, default=0)
+    total_lessons = Column(Integer, default=0)
+    completion_percentage = Column(Float, default=0.0)
+    is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
+    unlocked_at = Column(DateTime, default=datetime.utcnow)
+
+
 AVATAR_COLORS = ["#f0a500", "#1e3a5f", "#10b981", "#3b82f6", "#a855f7", "#ec4899", "#f43f5e", "#f97316", "#14b8a6", "#6366f1"]
 
 
@@ -116,6 +151,7 @@ class User(Base):
     selected_language = Column(String, default="ru")
     xp_points = Column(Integer, default=0)
     level = Column(String, default="beginner")
+    selected_level = Column(String, default="beginner")
     total_lessons_completed = Column(Integer, default=0)
     total_quizzes_passed = Column(Integer, default=0)
     coins = Column(Integer, default=0)
@@ -131,3 +167,4 @@ class User(Base):
 
     progress = relationship("UserProgress", back_populates="user")
     chat_history = relationship("AIChatHistory", back_populates="user")
+    vocabulary_reviews = relationship("VocabularyReview", back_populates="user")

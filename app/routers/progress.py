@@ -4,6 +4,7 @@ from datetime import datetime
 from app import models, schemas
 from app.deps import get_db, get_current_user
 from app.level_utils import level_from_xp
+from app.services.level_service import unlock_next_level_if_earned
 
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
@@ -60,10 +61,14 @@ def complete_lesson(
         xp_awarded = True
 
     db.commit()
+
+    level_up = unlock_next_level_if_earned(current_user.id, db)
+
     return {
         "xp_awarded": xp_awarded,
         "xp_points": current_user.xp_points,
         "streak": current_user.streak,
+        "level_up": level_up,
     }
 
 
@@ -128,3 +133,73 @@ def get_summary(
         weak_topics=weak_topics,
         weak_topic_lessons=weak_topic_lessons
     )
+
+
+@router.get("/vocabulary/due")
+def get_due_words(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    from datetime import datetime
+    due = db.query(models.VocabularyReview).filter(
+        models.VocabularyReview.user_id == current_user.id,
+        models.VocabularyReview.next_review_at <= datetime.utcnow()
+    ).limit(20).all()
+    return [{"id": w.id, "word": w.word, "translation": w.translation, "correct_count": w.correct_count} for w in due]
+
+
+@router.post("/vocabulary/review")
+def submit_vocabulary_review(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    from datetime import datetime, timedelta
+    word_id = data.get("word_id")
+    correct = data.get("correct", False)
+    review = db.query(models.VocabularyReview).filter(
+        models.VocabularyReview.id == word_id,
+        models.VocabularyReview.user_id == current_user.id
+    ).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Калима ёфт нашуд")
+    review.total_reviews += 1
+    if correct:
+        review.correct_count += 1
+        if review.interval_days == 1:
+            review.interval_days = 6
+        else:
+            review.interval_days = int(review.interval_days * review.ease_factor)
+        review.ease_factor = max(1.3, review.ease_factor + 0.1)
+    else:
+        review.interval_days = 1
+        review.ease_factor = max(1.3, review.ease_factor - 0.2)
+    review.next_review_at = datetime.utcnow() + timedelta(days=review.interval_days)
+    db.commit()
+    return {"next_review_in_days": review.interval_days, "ease_factor": review.ease_factor}
+
+
+@router.post("/vocabulary/add")
+def add_vocabulary_word(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    word = data.get("word", "").lower().strip()
+    translation = data.get("translation", "").strip()
+    if not word:
+        raise HTTPException(status_code=400, detail="Калима холӣ аст")
+    existing = db.query(models.VocabularyReview).filter(
+        models.VocabularyReview.user_id == current_user.id,
+        models.VocabularyReview.word == word
+    ).first()
+    if existing:
+        return {"message": "Калима аллакай дар рӯйхат аст"}
+    new_word = models.VocabularyReview(
+        user_id=current_user.id,
+        word=word,
+        translation=translation
+    )
+    db.add(new_word)
+    db.commit()
+    return {"message": "Калима илова шуд", "word": word}

@@ -37,6 +37,10 @@ def run_migrations():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_bonus_claimed_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_challenge_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_challenge_streak INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS selected_level VARCHAR DEFAULT 'beginner'",
+        "ALTER TABLE courses ADD COLUMN IF NOT EXISTS level_order INTEGER DEFAULT 1",
+        "ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_locked_by_default BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE courses ADD COLUMN IF NOT EXISTS required_previous_level VARCHAR",
     ]
     with engine.begin() as conn:
         for stmt in statements:
