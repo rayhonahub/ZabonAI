@@ -1,6 +1,34 @@
 from app.database import SessionLocal
 from app import models
 
+LESSON_CONTENT_TEMPLATE = """
+All lesson content must be bilingual: English word/rule + Tajik explanation, never English-only
+and never Russian. Every new lesson should follow this markdown shape:
+
+## [English Topic Title] / [Тоҷикӣ Унвон]
+
+[Кӯтоҳ дар бораи мавзӯи дарс ба тоҷикӣ]
+
+### Луғат / Vocabulary:
+| Англисӣ | Тоҷикӣ | Талаффуз |
+|---------|--------|----------|
+| word | тарҷума | [wɜːd] |
+
+### Қоида / Grammar Rule:
+[Rule in English]
+➜ [Тавзеҳ ба тоҷикӣ]
+
+### Мисолҳо / Examples:
+- **English sentence** — Тарҷумаи тоҷикӣ
+
+### Диалог / Dialogue:
+A: English line (Тоҷикии тарҷума)
+B: English reply (Тоҷикии тарҷума)
+
+### Ёдоварӣ / Remember:
+⚠️ Хатои маъмул — common mistake to avoid
+"""
+
 
 def seed_diverse_lessons():
     db = SessionLocal()

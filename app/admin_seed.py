@@ -2,6 +2,32 @@
 HOW TO ADD NEW CONTENT:
 Edit the example call at the bottom of this file with your course/module/lesson
 data, then run: python -m app.admin_seed
+
+LESSON CONTENT FORMAT (required for every lesson — English + Tajik side by side,
+never English-only, never Russian):
+
+## [English Topic Title] / [Тоҷикӣ Унвон]
+
+[Кӯтоҳ дар бораи мавзӯи дарс ба тоҷикӣ]
+
+### Луғат / Vocabulary:
+| Англисӣ | Тоҷикӣ | Талаффуз |
+|---------|--------|----------|
+| word | тарҷума | [wɜːd] |
+
+### Қоида / Grammar Rule:
+[Rule in English]
+➜ [Тавзеҳ ба тоҷикӣ]
+
+### Мисолҳо / Examples:
+- **English sentence** — Тарҷумаи тоҷикӣ
+
+### Диалог / Dialogue:
+A: English line (Тоҷикии тарҷума)
+B: English reply (Тоҷикии тарҷума)
+
+### Ёдоварӣ / Remember:
+⚠️ Хатои маъмул — common mistake to avoid
 """
 
 from app.database import SessionLocal
@@ -15,10 +41,11 @@ def add_course(level: str, title: str, description: str, modules: list):
         {
             "title": "Module name",
             "lessons": [
-                {"title": "Lesson name", "content": "## Lesson content in markdown..."}
+                {"title": "Lesson name", "content": "## English Topic / Тоҷикӣ Унвон\\n\\n..."}
             ]
         }
     ]
+    See the module docstring above for the required bilingual lesson content format.
     """
     db = SessionLocal()
 
