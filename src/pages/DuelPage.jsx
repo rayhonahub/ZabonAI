@@ -37,13 +37,14 @@ export default function DuelPage() {
   const [result, setResult] = useState(null); // { scores, playerNames, winnerId, winnerName }
 
   // Solo test mode state
+  const [soloMode, setSoloMode] = useState(false);
   const [soloQuestions, setSoloQuestions] = useState([]);
-  const [soloIndex, setSoloIndex] = useState(0);
+  const [soloCurrentIndex, setSoloCurrentIndex] = useState(0);
+  const [soloSelectedAnswer, setSoloSelectedAnswer] = useState(null);
+  const [soloAnswerChecked, setSoloAnswerChecked] = useState(false);
   const [soloScore, setSoloScore] = useState(0);
-  const [soloSelected, setSoloSelected] = useState(null);
-  const [soloAnswered, setSoloAnswered] = useState(false);
-  const [soloTimeLeft, setSoloTimeLeft] = useState(QUESTION_SECONDS);
-  const soloTimerRef = useRef(null);
+  const [soloFinished, setSoloFinished] = useState(false);
+  const [soloLoading, setSoloLoading] = useState(false);
 
   const timerRef = useRef(null);
 
@@ -89,58 +90,98 @@ export default function DuelPage() {
     }, 1000);
   }
 
-  function clearSoloTimer() {
-    if (soloTimerRef.current) clearInterval(soloTimerRef.current);
-  }
+  const fallbackSoloQuestions = [
+    {
+      id: 1,
+      question: "What is the correct form of 'to be' for 'I'?",
+      option_a: "I is",
+      option_b: "I am",
+      option_c: "I are",
+      option_d: "I be",
+      correct_answer: "b",
+    },
+    {
+      id: 2,
+      question: "Choose the correct sentence:",
+      option_a: "She go to school",
+      option_b: "She goes to school",
+      option_c: "She going to school",
+      option_d: "She gone to school",
+      correct_answer: "b",
+    },
+    {
+      id: 3,
+      question: "What does 'apple' mean in Tajik?",
+      option_a: "китоб",
+      option_b: "хона",
+      option_c: "себ",
+      option_d: "об",
+      correct_answer: "c",
+    },
+    {
+      id: 4,
+      question: "Choose the correct past tense:",
+      option_a: "Yesterday I go",
+      option_b: "Yesterday I goes",
+      option_c: "Yesterday I went",
+      option_d: "Yesterday I going",
+      correct_answer: "c",
+    },
+    {
+      id: 5,
+      question: "What is 'kitob' in English?",
+      option_a: "water",
+      option_b: "book",
+      option_c: "house",
+      option_d: "friend",
+      correct_answer: "b",
+    },
+  ];
 
-  function startSoloTimer() {
-    clearSoloTimer();
-    setSoloTimeLeft(QUESTION_SECONDS);
-    soloTimerRef.current = setInterval(() => {
-      setSoloTimeLeft((t) => {
-        if (t <= 1) {
-          clearSoloTimer();
-          setSoloAnswered(true);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-  }
-
-  function handleStartSolo() {
+  // Start solo test
+  async function startSoloTest() {
     setError("");
-    api.get("/quiz/daily-challenge").then((r) => {
-      setSoloQuestions(r.data);
-      setSoloIndex(0);
-      setSoloScore(0);
-      setSoloSelected(null);
-      setSoloAnswered(false);
-      setScreen("solo");
-      startSoloTimer();
-    }).catch(() => setError("Саволҳоро гирифтан нашуд"));
-  }
-
-  function handleSoloAnswer(opt) {
-    if (soloAnswered) return;
-    clearSoloTimer();
-    setSoloSelected(opt);
-    setSoloAnswered(true);
-    const q = soloQuestions[soloIndex];
-    if (q && opt === q.correct_answer) {
-      setSoloScore((s) => s + 1);
+    setSoloLoading(true);
+    try {
+      const res = await api.get("/quiz/daily-challenge");
+      setSoloQuestions(res.data);
+    } catch (err) {
+      // If daily challenge fails, use hardcoded questions
+      setSoloQuestions(fallbackSoloQuestions);
     }
+    setSoloCurrentIndex(0);
+    setSoloSelectedAnswer(null);
+    setSoloAnswerChecked(false);
+    setSoloScore(0);
+    setSoloFinished(false);
+    setSoloMode(true);
+    setSoloLoading(false);
   }
 
+  // Handle answer selection
+  function handleSoloAnswer(answer) {
+    if (soloAnswerChecked) return; // Already answered this question
+    setSoloSelectedAnswer(answer); // just select, don't check yet
+  }
+
+  // Check answer and move forward
   function handleSoloNext() {
-    const nextIndex = soloIndex + 1;
-    if (nextIndex >= soloQuestions.length) {
-      setScreen("soloResult");
+    if (!soloSelectedAnswer) return; // No answer selected yet
+
+    const currentQ = soloQuestions[soloCurrentIndex];
+    const isCorrect = soloSelectedAnswer.toLowerCase() === currentQ.correct_answer.toLowerCase();
+
+    if (isCorrect) {
+      setSoloScore((prev) => prev + 1);
+    }
+
+    // Move to next question or finish
+    if (soloCurrentIndex + 1 >= soloQuestions.length) {
+      setSoloFinished(true);
     } else {
-      setSoloIndex(nextIndex);
-      setSoloSelected(null);
-      setSoloAnswered(false);
-      startSoloTimer();
+      setSoloCurrentIndex((prev) => prev + 1);
+      setSoloSelectedAnswer(null);
+      setSoloAnswerChecked(false);
     }
   }
 
@@ -238,7 +279,6 @@ export default function DuelPage() {
 
   function handleRestart() {
     if (wsRef.current) wsRef.current.close();
-    clearSoloTimer();
     setScreen("lobby");
     setRoomCode("");
     setJoinCode("");
@@ -248,16 +288,17 @@ export default function DuelPage() {
     setScores({});
     setPlayers({});
     setMyId(null);
+    setSoloMode(false);
     setSoloQuestions([]);
-    setSoloIndex(0);
+    setSoloCurrentIndex(0);
+    setSoloSelectedAnswer(null);
+    setSoloAnswerChecked(false);
     setSoloScore(0);
-    setSoloSelected(null);
-    setSoloAnswered(false);
+    setSoloFinished(false);
   }
 
   useEffect(() => () => {
     clearTimer();
-    clearSoloTimer();
     if (wsRef.current) wsRef.current.close();
   }, []);
 
@@ -273,6 +314,144 @@ export default function DuelPage() {
 
   const timerPct = (timeLeft / QUESTION_SECONDS) * 100;
   const timerColor = timeLeft > 10 ? "#14B8A6" : "#FBBF24";
+
+  // ─── SOLO TEST ───────────────────────────────────────────────────────
+  if (soloMode && !soloFinished && soloQuestions.length > 0) {
+    const currentQ = soloQuestions[soloCurrentIndex];
+    const options = [
+      { key: "a", text: currentQ.option_a },
+      { key: "b", text: currentQ.option_b },
+      { key: "c", text: currentQ.option_c },
+      { key: "d", text: currentQ.option_d },
+    ].filter((o) => o.text);
+
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C, #0A2A2E, #0E3A3F)", padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
+
+        {/* Header */}
+        <div style={{ width: "100%", maxWidth: 700, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+          <button
+            onClick={() => { setSoloMode(false); setSoloFinished(false); }}
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "8px 16px", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14 }}
+          >
+            ← Бозгашт
+          </button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 2 }}>Савол</div>
+            <div style={{ color: "white", fontWeight: 500, fontSize: 16 }}>{soloCurrentIndex + 1} / {soloQuestions.length}</div>
+          </div>
+          <div style={{ background: "rgba(45,212,191,0.1)", border: "1px solid rgba(45,212,191,0.3)", borderRadius: 6, padding: "8px 16px", color: "#2DD4BF", fontSize: 14, fontWeight: 500 }}>
+            {soloScore} дуруст
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ width: "100%", maxWidth: 700, height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, marginBottom: "2rem" }}>
+          <div style={{ width: `${(soloCurrentIndex / soloQuestions.length) * 100}%`, height: "100%", background: "#14B8A6", borderRadius: 2, transition: "width 0.3s ease" }} />
+        </div>
+
+        {/* Question card */}
+        <div style={{ width: "100%", maxWidth: 700, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(45,212,191,0.15)", borderRadius: 6, padding: "32px", marginBottom: "1.5rem", textAlign: "center" }}>
+          <p style={{ color: "white", fontSize: 20, fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+            {currentQ.question}
+          </p>
+        </div>
+
+        {/* Answer options */}
+        <div style={{ width: "100%", maxWidth: 700, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1.5rem" }}>
+          {options.map((opt) => {
+            const isSelected = soloSelectedAnswer === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => handleSoloAnswer(opt.key)}
+                style={{
+                  background: isSelected ? "rgba(45,212,191,0.15)" : "rgba(255,255,255,0.04)",
+                  border: isSelected ? "2px solid #2DD4BF" : "1px solid rgba(45,212,191,0.15)",
+                  borderRadius: 6,
+                  padding: "16px 20px",
+                  color: isSelected ? "#2DD4BF" : "white",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  fontWeight: isSelected ? 500 : 400,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: isSelected ? "#14B8A6" : "rgba(255,255,255,0.1)",
+                  color: isSelected ? "#04231F" : "rgba(255,255,255,0.6)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 600, flexShrink: 0,
+                }}>
+                  {opt.key.toUpperCase()}
+                </span>
+                {opt.text}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Next button — only active when answer selected */}
+        <button
+          onClick={handleSoloNext}
+          disabled={!soloSelectedAnswer}
+          style={{
+            width: "100%",
+            maxWidth: 700,
+            background: soloSelectedAnswer ? "#14B8A6" : "rgba(255,255,255,0.1)",
+            border: "none",
+            borderRadius: 6,
+            padding: "16px",
+            color: soloSelectedAnswer ? "#04231F" : "rgba(255,255,255,0.3)",
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: soloSelectedAnswer ? "pointer" : "not-allowed",
+            transition: "all 0.2s ease",
+          }}
+        >
+          {soloCurrentIndex + 1 >= soloQuestions.length ? "Натиҷаро бин" : "Саволи навбатӣ →"}
+        </button>
+      </div>
+    );
+  }
+
+  // ─── SOLO RESULT ─────────────────────────────────────────────────────
+  if (soloMode && soloFinished) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C, #0A2A2E, #0E3A3F)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(45,212,191,0.2)", borderRadius: 6, padding: "48px 40px", textAlign: "center", maxWidth: 400 }}>
+          <div style={{ fontSize: 48, fontWeight: 700, color: "#2DD4BF", marginBottom: 8 }}>
+            {soloScore}/{soloQuestions.length}
+          </div>
+          <p style={{ color: "white", fontSize: 18, fontWeight: 500, marginBottom: 8 }}>
+            {soloScore >= 4 ? "Аъло!" : soloScore >= 3 ? "Хуб!" : "Давом деҳ!"}
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, marginBottom: 32 }}>
+            {soloScore >= 4 ? "Шумо хеле хуб кор кардед!" : "Боз машқ кунед, ҳатман беҳтар мешавед!"}
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <button
+              onClick={startSoloTest}
+              style={{ background: "#14B8A6", border: "none", borderRadius: 6, padding: "12px 24px", color: "#04231F", fontWeight: 600, cursor: "pointer" }}
+            >
+              Боз бозӣ кун
+            </button>
+            <button
+              onClick={() => { setSoloMode(false); setSoloFinished(false); }}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "12px 24px", color: "white", cursor: "pointer" }}
+            >
+              Бозгашт
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─── LOBBY ───────────────────────────────────────────────────────────
   if (screen === "lobby") {
@@ -417,14 +596,16 @@ export default function DuelPage() {
                 Бе рақиб тест кун
               </p>
               <button
-                onClick={handleStartSolo}
+                onClick={startSoloTest}
+                disabled={soloLoading}
                 style={{
                   width: "100%", padding: "0.65rem", borderRadius: 8, border: "none",
                   background: "linear-gradient(135deg, #0D9488, #14B8A6)",
-                  color: "white", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer",
+                  color: "white", fontWeight: 600, fontSize: "0.9rem",
+                  cursor: soloLoading ? "default" : "pointer", opacity: soloLoading ? 0.7 : 1,
                 }}
               >
-                Санҷиш
+                {soloLoading ? "Боркунӣ..." : "Санҷиш"}
               </button>
             </div>
           </div>
@@ -795,185 +976,6 @@ export default function DuelPage() {
                 }}
               >
                 Ба курсҳо
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── SOLO TEST ───────────────────────────────────────────────────────
-  if (screen === "solo") {
-    const soloQ = soloQuestions[soloIndex];
-    const soloCircumference = 2 * Math.PI * 20;
-    const soloStrokeOffset = soloCircumference - (soloTimeLeft / QUESTION_SECONDS) * soloCircumference;
-    const soloTimerColor = soloTimeLeft > 10 ? "#14B8A6" : "#FBBF24";
-
-    return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #061A1C 0%, #0A2A2E 100%)", color: "white" }}>
-        <NeuralBackground />
-
-        <div style={{
-          position: "sticky", top: 0, zIndex: 30,
-          background: "rgba(6,26,28,0.85)", backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(20,184,166,0.15)",
-          padding: "0.75rem 1.5rem",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#14B8A6" }}>Санҷиши яккаса</span>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Савол</div>
-            <div style={{ fontWeight: 700, color: "white" }}>{soloIndex + 1} / {soloQuestions.length}</div>
-          </div>
-          <span style={{
-            fontWeight: 800, fontSize: "1.3rem", color: "#14B8A6",
-            background: "rgba(20,184,166,0.1)", borderRadius: 6, padding: "0 0.5rem",
-          }}>{soloScore}</span>
-        </div>
-
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1rem" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
-            <div style={{ position: "relative", width: 56, height: 56 }}>
-              <svg width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
-                <circle cx="28" cy="28" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
-                <circle
-                  cx="28" cy="28" r="20" fill="none"
-                  stroke={soloTimerColor} strokeWidth="4"
-                  strokeDasharray={soloCircumference}
-                  strokeDashoffset={soloStrokeOffset}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
-                />
-              </svg>
-              <span style={{
-                position: "absolute", inset: 0, display: "flex", alignItems: "center",
-                justifyContent: "center", fontWeight: 700, fontSize: "0.9rem", color: soloTimerColor,
-              }}>
-                {soloTimeLeft}
-              </span>
-            </div>
-          </div>
-
-          {soloQ && (
-            <div className="glass-card" style={{ padding: "2rem", borderRadius: 16, marginBottom: "1.25rem" }}>
-              <p style={{ fontSize: "1.15rem", fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
-                {soloQ.question}
-              </p>
-            </div>
-          )}
-
-          {soloQ && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-              {optionKeys.map((key, i) => {
-                const val = soloQ[key];
-                if (!val) return null;
-                const label = optionLabels[i];
-                const isSelected = soloSelected === label;
-                const isCorrect = soloAnswered && label === soloQ.correct_answer;
-                const isWrong = soloAnswered && isSelected && !isCorrect;
-
-                let bg = "rgba(255,255,255,0.04)";
-                let border = "1.5px solid rgba(255,255,255,0.1)";
-                let color = "rgba(255,255,255,0.85)";
-
-                if (isCorrect) { bg = "rgba(20,184,166,0.18)"; border = "1.5px solid #14B8A6"; color = "#14B8A6"; }
-                else if (isWrong) { bg = "rgba(251,191,36,0.12)"; border = "1.5px solid #FBBF24"; color = "#FBBF24"; }
-                else if (isSelected) { bg = "rgba(20,184,166,0.08)"; border = "1.5px solid rgba(20,184,166,0.4)"; }
-
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleSoloAnswer(label)}
-                    disabled={soloAnswered}
-                    style={{
-                      padding: "0.85rem 1rem", borderRadius: 10,
-                      background: bg, border, color,
-                      fontWeight: 500, fontSize: "0.9rem", textAlign: "left",
-                      cursor: soloAnswered ? "default" : "pointer",
-                      transition: "all 0.2s",
-                      display: "flex", alignItems: "center", gap: 10,
-                    }}
-                  >
-                    <span style={{
-                      minWidth: 26, height: 26, borderRadius: 6,
-                      background: isCorrect ? "rgba(20,184,166,0.2)" : isWrong ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.06)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontWeight: 700, fontSize: "0.8rem", color: "inherit",
-                    }}>
-                      {label.toUpperCase()}
-                    </span>
-                    {val}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {soloAnswered && (
-            <button
-              onClick={handleSoloNext}
-              style={{
-                width: "100%", marginTop: "1.5rem", padding: "0.75rem", borderRadius: 10, border: "none",
-                background: "linear-gradient(135deg, #0D9488, #14B8A6)",
-                color: "white", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
-              }}
-            >
-              {soloIndex + 1 >= soloQuestions.length ? "Дидани натиҷа" : "Саволи навбатӣ"}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ─── SOLO RESULT ─────────────────────────────────────────────────────
-  if (screen === "soloResult") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#061A1C", color: "white" }}>
-        <NeuralBackground />
-        <Navbar />
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", minHeight: "calc(100vh - 64px)", padding: "2rem",
-        }}>
-          <div className="glass-card" style={{ padding: "2.5rem", borderRadius: 20, textAlign: "center", maxWidth: 420, width: "100%" }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: 20, margin: "0 auto 1rem",
-              background: "rgba(20,184,166,0.15)", border: "1.5px solid rgba(20,184,166,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 32px rgba(20,184,166,0.2)",
-            }}>
-              <PlayCircle size={36} color="#14B8A6" />
-            </div>
-            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#14B8A6", margin: "0 0 0.5rem" }}>
-              Санҷиш тамом шуд!
-            </h2>
-            <p style={{ color: "white", fontWeight: 700, fontSize: "1.4rem", margin: "0 0 1.5rem" }}>
-              Натиҷа: {soloScore}/{soloQuestions.length}
-            </p>
-            <div style={{ display: "flex", gap: "0.75rem", flexDirection: "column" }}>
-              <button
-                onClick={handleStartSolo}
-                style={{
-                  padding: "0.75rem", borderRadius: 10, border: "none",
-                  background: "linear-gradient(135deg, #0D9488, #14B8A6)",
-                  color: "white", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
-                }}
-              >
-                <RefreshCw size={16} /> Такрор
-              </button>
-              <button
-                onClick={handleRestart}
-                style={{
-                  padding: "0.75rem", borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "transparent", color: "rgba(255,255,255,0.6)",
-                  fontWeight: 600, fontSize: "0.95rem", cursor: "pointer",
-                }}
-              >
-                Бозгашт ба лобби
               </button>
             </div>
           </div>
