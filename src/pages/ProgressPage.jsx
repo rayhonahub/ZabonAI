@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Flame, BarChart2 } from "lucide-react";
+import { Star, Flame, BarChart2, CheckCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import { useCountUp } from "../hooks/useCountUp";
@@ -8,29 +8,72 @@ import { usePageTitle } from "../hooks/usePageTitle";
 
 const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
 
+const statCardStyle = {
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(45,212,191,0.12)",
+  borderRadius: 8,
+  padding: "24px 20px",
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+};
+
+const cardLabelRowStyle = { display: "flex", alignItems: "center", gap: 6 };
+
+const cardLabelTextStyle = {
+  color: "rgba(255,255,255,0.45)",
+  fontSize: 11,
+  fontWeight: 500,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  margin: 0,
+};
+
+const cardValueStyle = {
+  color: "white",
+  fontSize: 32,
+  fontWeight: 500,
+  letterSpacing: "-0.02em",
+  margin: "4px 0",
+};
+
+const cardSublabelStyle = { color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 };
+
+const glassSectionStyle = {
+  background: "rgba(255,255,255,0.03)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
+  padding: 20,
+};
+
+const sectionHeadingStyle = {
+  color: "rgba(255,255,255,0.7)",
+  fontSize: 14,
+  fontWeight: 500,
+  margin: "0 0 16px",
+};
+
 function levelLabel(xp) {
   if (xp >= 300) return "Болотар";
   if (xp >= 100) return "Миёна";
   return "Ибтидоӣ";
 }
 
-function ProgressRing({ percent }) {
+function ProgressRing({ percent, size = 72, stroke = 7 }) {
   const [animatedPercent, setAnimatedPercent] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setAnimatedPercent(percent), 100);
     return () => clearTimeout(t);
   }, [percent]);
 
-  const size = 120;
-  const stroke = 10;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (animatedPercent / 100) * circumference;
 
   return (
-    <div style={{ position: "relative", width: 120, height: 120, flexShrink: 0 }}>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -44,23 +87,19 @@ function ProgressRing({ percent }) {
           style={{ transition: "stroke-dashoffset 1s ease-out" }}
         />
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 22, fontWeight: 700, color: "white" }}>{Math.round(animatedPercent)}%</span>
-      </div>
     </div>
   );
 }
 
-function StatCard({ Icon, iconColor, label, value }) {
+function StatCard({ Icon, iconColor, label, value, sublabel }) {
   return (
-    <div className="glass-card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <Icon size={16} color={iconColor} />
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>
-          {label}
-        </p>
+    <div style={statCardStyle}>
+      <div style={cardLabelRowStyle}>
+        <Icon size={14} color={iconColor} />
+        <p style={cardLabelTextStyle}>{label}</p>
       </div>
-      <p style={{ color: "white", fontSize: 28, fontWeight: 500, margin: 0 }}>{value}</p>
+      <p style={cardValueStyle}>{value}</p>
+      {sublabel && <p style={cardSublabelStyle}>{sublabel}</p>}
     </div>
   );
 }
@@ -82,17 +121,16 @@ function StreakCalendar({ streak }) {
         if (d.isToday) {
           circleStyle = { background: "transparent", border: "2px solid #2DD4BF", color: d.isActive ? "#2DD4BF" : "rgba(255,255,255,0.3)" };
         } else if (d.isActive) {
-          circleStyle = { background: "#14B8A6", color: "#04231F" };
+          circleStyle = { background: "#14B8A6", color: "white" };
         } else {
-          circleStyle = { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)" };
+          circleStyle = { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" };
         }
         return (
-          <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600 }}>{d.label}</span>
+          <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
@@ -104,6 +142,7 @@ function StreakCalendar({ streak }) {
             >
               {d.isActive && <Flame size={14} color={circleStyle.color} />}
             </div>
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, marginTop: 8 }}>{d.label}</span>
           </div>
         );
       })}
@@ -119,7 +158,7 @@ function scoreColor(score) {
 
 function QuizScoreList({ entries }) {
   if (entries.length === 0) {
-    return <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Ҳоло тест нагузаштед</p>;
+    return <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, textAlign: "center", margin: 0 }}>Ҳоло тест нагузаштед</p>;
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -187,76 +226,78 @@ export default function ProgressPage() {
     <div style={{ minHeight: "100vh", background: BG, color: "white" }}>
       <Navbar />
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 32 }}>
-          <h1 style={{ color: "white", fontSize: 28, fontWeight: 500, margin: 0 }}>Пешрафти ман</h1>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 24 }}>
+          <h1 style={{ color: "white", fontSize: 26, fontWeight: 500, margin: 0 }}>Пешрафти ман</h1>
           <span
             style={{
-              fontSize: 14,
+              fontSize: 13,
               padding: "6px 14px",
               borderRadius: 6,
-              background: "rgba(45,212,191,0.1)",
-              border: "1px solid rgba(45,212,191,0.3)",
+              background: "rgba(45,212,191,0.08)",
+              border: "1px solid rgba(45,212,191,0.25)",
               color: "#2DD4BF",
-              fontWeight: 600,
+              fontWeight: 500,
             }}
           >
-            {level}
+            Сатҳ: {level}
           </span>
         </div>
 
         {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 40 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="glass-card" style={{ height: 128 }} />
+              <div key={i} style={{ ...statCardStyle, height: 128 }} />
             ))}
           </div>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 32 }}>
-              <div className="glass-card" style={{ padding: "1.5rem", display: "flex", alignItems: "center", gap: 16 }}>
-                <ProgressRing percent={completionPercent} />
-                <div>
-                  <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>
-                    АНҶОМШУДА
-                  </p>
-                  <p style={{ color: "white", fontSize: 16, fontWeight: 600, marginTop: 6 }}>
-                    {animatedCompleted}/{summary?.total_lessons ?? 0} дарс
-                  </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+              <div style={statCardStyle}>
+                <div style={cardLabelRowStyle}>
+                  <CheckCircle size={14} color="#14B8A6" />
+                  <p style={cardLabelTextStyle}>АНҶОМШУДА</p>
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <ProgressRing percent={completionPercent} />
+                  <p style={cardValueStyle}>{Math.round(completionPercent)}%</p>
+                </div>
+                <p style={cardSublabelStyle}>
+                  {animatedCompleted}/{summary?.total_lessons ?? 0} дарс
+                </p>
               </div>
-              <StatCard Icon={Star} iconColor="#FBBF24" label="Холҳои XP" value={`${animatedXp}`} />
-              <StatCard Icon={BarChart2} iconColor="#14B8A6" label="Миёнаи натиҷа" value={`${summary?.average_score ?? 0}%`} />
-              <StatCard Icon={Flame} iconColor="#FF5C8A" label="Силсилаи имрӯза" value={`${summary?.streak ?? 0}`} />
+              <StatCard Icon={Star} iconColor="#FBBF24" label="Холҳои XP" value={`${animatedXp}`} sublabel="умумии XP" />
+              <StatCard Icon={BarChart2} iconColor="#2DD4BF" label="Миёнаи натиҷа" value={`${summary?.average_score ?? 0}%`} sublabel="миёнаи натиҷа" />
+              <StatCard Icon={Flame} iconColor="#FBBF24" label="Силсилаи имрӯза" value={`${summary?.streak ?? 0}`} sublabel="рӯзи силсила" />
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 32 }}>
-              <div className="glass-card" style={{ padding: "1.5rem" }}>
-                <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 16px" }}>7 рӯзи охир</h2>
+              <div style={glassSectionStyle}>
+                <h2 style={sectionHeadingStyle}>7 рӯзи охир</h2>
                 <StreakCalendar streak={summary?.streak ?? 0} />
               </div>
 
-              <div className="glass-card" style={{ padding: "1.5rem" }}>
-                <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 16px" }}>Натиҷаи тестҳо</h2>
+              <div style={glassSectionStyle}>
+                <h2 style={sectionHeadingStyle}>Натиҷаи тестҳо</h2>
                 <QuizScoreList entries={scoreEntries} />
               </div>
             </div>
           </>
         )}
 
-        <div className="glass-card" style={{ padding: "1.75rem" }}>
+        <div style={{ ...glassSectionStyle, padding: 24 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
-            <h2 style={{ color: "white", fontSize: 18, fontWeight: 600, margin: 0 }}>Мавзӯъҳои заиф</h2>
+            <h2 style={{ ...sectionHeadingStyle, margin: 0 }}>Мавзӯъҳои заиф</h2>
             <button
               onClick={getAdvice}
               disabled={adviceLoading}
               style={{
-                padding: "10px 20px",
+                padding: "8px 16px",
                 borderRadius: 6,
-                fontWeight: 600,
-                fontSize: 14,
-                background: "#FBBF24",
-                color: "#04231F",
-                border: "none",
+                fontWeight: 500,
+                fontSize: 13,
+                background: "rgba(251,191,36,0.12)",
+                border: "1px solid rgba(251,191,36,0.3)",
+                color: "#FBBF24",
                 cursor: adviceLoading ? "default" : "pointer",
                 opacity: adviceLoading ? 0.6 : 1,
                 transition: "opacity 0.2s",
@@ -271,10 +312,11 @@ export default function ProgressPage() {
               style={{
                 fontSize: 14,
                 borderRadius: 6,
-                padding: "12px 16px",
-                background: "rgba(20,184,166,0.08)",
-                border: "1px solid rgba(20,184,166,0.3)",
-                color: "#2DD4BF",
+                padding: 16,
+                background: "rgba(20,184,166,0.06)",
+                border: "1px solid rgba(20,184,166,0.2)",
+                color: "rgba(45,212,191,0.8)",
+                textAlign: "center",
                 margin: 0,
               }}
             >
