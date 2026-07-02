@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Navbar from "../components/Navbar";
+import LevelUpModal from "../components/LevelUpModal";
 import api from "../api/axios";
 import { showToast } from "../utils/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -36,6 +37,8 @@ export default function QuizPage() {
   const [mode, setMode] = useState("quiz"); // quiz | result | practice
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceSelected, setPracticeSelected] = useState(null);
+  const [levelUpCourses, setLevelUpCourses] = useState([]);
+  const [levelUpDismissed, setLevelUpDismissed] = useState(false);
   const confettiFired = useRef(false);
 
   useEffect(() => {
@@ -98,6 +101,16 @@ export default function QuizPage() {
       setResult(res.data);
       setMode("result");
       showToast("ℹ️ Quiz saved / Тест сохранён", "info");
+
+      if (res.data.level_up) {
+        api
+          .get("/courses/")
+          .then((r) => {
+            const names = r.data.filter((c) => c.level === res.data.level_up.new_level).map((c) => c.title);
+            setLevelUpCourses(names);
+          })
+          .catch(() => setLevelUpCourses([]));
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Could not submit quiz / Не удалось отправить тест");
     } finally {
@@ -112,6 +125,8 @@ export default function QuizPage() {
     setAnswers({});
     setSelected(null);
     setResult(null);
+    setLevelUpCourses([]);
+    setLevelUpDismissed(false);
     setMode("quiz");
   }
 
@@ -337,6 +352,14 @@ export default function QuizPage() {
             }
           `}</style>
         </div>
+
+        {result.level_up && !levelUpDismissed && (
+          <LevelUpModal
+            levelUp={result.level_up}
+            unlockedCourses={levelUpCourses}
+            onClose={() => setLevelUpDismissed(true)}
+          />
+        )}
       </div>
     );
   }

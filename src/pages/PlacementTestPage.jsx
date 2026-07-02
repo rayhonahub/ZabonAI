@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Clock, HelpCircle, Sparkles } from "lucide-react";
 import NeuralBackground from "../components/NeuralBackground";
+import api from "../api/axios";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 const questions = [
@@ -17,23 +18,67 @@ const questions = [
   { id: 10, question: "Кадоме аз ин ҷумлаҳо грамматикаи дурусттар дорад?", options: ["I suggest that he goes home", "I suggest that he go home", "I suggest that he going home", "I suggest that he to go home"], correct: 1 },
 ];
 
+const LEVEL_INFO = {
+  beginner: { emoji: "🌱", title: "Сатҳи ибтидоӣ", desc: "Нигаронӣ нест! Ҳама аз ибтидо оғоз мекунанд. Мо ба шумо ёрӣ мерасонем!" },
+  elementary: { emoji: "📚", title: "Сатҳи миёна", desc: "Аъло! Шумо асосҳоро медонед. Биёед ба пеш равем!" },
+  intermediate: { emoji: "🚀", title: "Сатҳи болотар", desc: "Баракалло! Шумо хуб медонед. Ҳоло мо мураккабтарашро меомӯзем!" },
+  advanced: { emoji: "⭐", title: "Сатҳи баланд", desc: "Фантастика! Шумо хеле хуб медонед. Биёед такмил диҳем!" },
+};
+
 function getLevel(score) {
-  if (score <= 3) return { key: "ibtidoi", label: "Сатҳи ибтидоӣ" };
-  if (score <= 6) return { key: "miyona", label: "Сатҳи миёна" };
-  if (score <= 8) return { key: "boloter", label: "Сатҳи болотар" };
-  return { key: "baland", label: "Сатҳи баланд" };
+  if (score <= 3) return "beginner";
+  if (score <= 6) return "elementary";
+  if (score <= 8) return "intermediate";
+  return "advanced";
 }
 
 const BG = "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)";
 
+function Logo() {
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(135deg, #0D9488, #22D3EE)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>Z</span>
+      </div>
+      <span style={{ color: "white", fontWeight: 600, fontSize: 16 }}>ZaboniAI</span>
+    </div>
+  );
+}
+
+function InfoCard({ Icon, value, label }) {
+  return (
+    <div className="glass-card" style={{ flex: 1, padding: "0.9rem 0.5rem", textAlign: "center" }}>
+      <Icon size={18} style={{ color: "#2DD4BF", margin: "0 auto 6px" }} />
+      <p style={{ color: "white", fontWeight: 700, fontSize: 14, margin: "0 0 2px" }}>{value}</p>
+      <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, margin: 0 }}>{label}</p>
+    </div>
+  );
+}
+
 export default function PlacementTestPage() {
   usePageTitle("Тести ҷойгиршавӣ");
   const navigate = useNavigate();
+  const [phase, setPhase] = useState("welcome"); // welcome | quiz | result
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [levelCourses, setLevelCourses] = useState([]);
+
+  const level = getLevel(correctCount);
+
+  useEffect(() => {
+    if (phase !== "result") return;
+    api
+      .get("/courses/")
+      .then((res) => {
+        const names = res.data.filter((c) => c.level === level).map((c) => c.title);
+        setLevelCourses(names);
+      })
+      .catch(() => setLevelCourses([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   function handleAnswer(optionIndex) {
     if (answered) return;
@@ -48,23 +93,92 @@ export default function PlacementTestPage() {
         setSelected(null);
         setAnswered(false);
       } else {
-        setFinished(true);
+        setPhase("result");
       }
     }, 900);
   }
 
-  function handleFinish() {
-    const level = getLevel(correctCount);
+  async function handleFinish() {
+    setSaving(true);
+    try {
+      await api.put("/profile/update", { selected_level: level });
+    } catch {
+      /* still proceed — user can retry level progression later */
+    }
     localStorage.setItem("placement_test_done", "true");
-    localStorage.setItem("user_level", level.key);
+    localStorage.setItem("user_level", level);
     navigate("/courses");
   }
 
-  const q = questions[index];
-  const level = getLevel(correctCount);
-  const progressPct = ((index + 1) / questions.length) * 100;
+  if (phase === "welcome") {
+    return (
+      <div style={{ minHeight: "100vh", background: BG, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+          <NeuralBackground />
+        </div>
+        <div className="glass-card fade-up-1" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 480, padding: "2.5rem" }}>
+          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 10,
+              background: "linear-gradient(135deg, #0D9488, #22D3EE)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 1rem",
+            }}>
+              <span style={{ color: "white", fontWeight: 700, fontSize: 22 }}>Z</span>
+            </div>
+            <h1 style={{ color: "white", fontWeight: 600, fontSize: 22, margin: "0 0 8px" }}>
+              Хуш омадед ба ZaboniAI!
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, margin: 0, lineHeight: 1.5 }}>
+              Пеш аз оғози омӯзиш, мо мехоҳем сатҳи дониши англисии шуморо бидонем.
+            </p>
+          </div>
 
-  if (finished) {
+          <div style={{ display: "flex", gap: 10, marginBottom: "1.5rem" }}>
+            <InfoCard Icon={Clock} value="5 дақиқа" label="Вақти тест" />
+            <InfoCard Icon={HelpCircle} value="10 савол" label="Шумораи савол" />
+            <InfoCard Icon={Sparkles} value="AI" label="Таҳлили натиҷа" />
+          </div>
+
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(45,212,191,0.12)",
+            borderRadius: 8,
+            padding: "1rem 1.1rem",
+            marginBottom: "1.75rem",
+          }}>
+            {[
+              "1. 10 савол ба шумо дода мешавад",
+              "2. Саволҳо аз осон ба душвор мераванд",
+              "3. AI сатҳи шуморо муайян мекунад",
+              "4. Барнома барои сатҳи шумо танзим мешавад",
+            ].map((line, i) => (
+              <p key={i} style={{ color: "rgba(255,255,255,0.65)", fontSize: 13.5, margin: i === 0 ? "0 0 8px" : "0 0 8px" }}>
+                {line}
+              </p>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setPhase("quiz")}
+            style={{
+              width: "100%", background: "#14B8A6", color: "#04231F",
+              border: "none", borderRadius: 6, padding: "0.85rem",
+              fontWeight: 600, fontSize: 15, cursor: "pointer",
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            Оғоз кардан
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "result") {
+    const info = LEVEL_INFO[level];
     return (
       <div style={{ minHeight: "100vh", background: BG, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -72,7 +186,7 @@ export default function PlacementTestPage() {
         </div>
         <div
           className="glass-card fade-up-1"
-          style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 460, padding: "2.5rem", textAlign: "center" }}
+          style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 480, padding: "2.5rem", textAlign: "center" }}
         >
           <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, marginBottom: 20, marginTop: 0 }}>
             Тест ба охир расид!
@@ -85,31 +199,61 @@ export default function PlacementTestPage() {
             boxShadow: "0 0 32px rgba(20,184,166,0.35)",
             marginBottom: "1.25rem",
           }}>
-            <span style={{ fontSize: 36 }}>🎓</span>
+            <span style={{ fontSize: 36 }}>{info.emoji}</span>
           </div>
-          <h1 style={{ color: "#2DD4BF", fontWeight: 600, fontSize: 26, margin: "0 0 8px" }}>
-            {level.label}
+          <h1 style={{ color: "#2DD4BF", fontWeight: 600, fontSize: 24, margin: "0 0 8px" }}>
+            {info.title}
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, margin: "0 0 2rem" }}>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, margin: "0 0 1rem", lineHeight: 1.5 }}>
+            {info.desc}
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, margin: "0 0 1.5rem" }}>
             Ту {correctCount} аз 10 саволро дуруст ҷавоб додӣ
           </p>
+
+          {levelCourses.length > 0 && (
+            <div style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(45,212,191,0.15)",
+              borderRadius: 8,
+              padding: "1rem 1.1rem",
+              marginBottom: "1.75rem",
+              textAlign: "left",
+            }}>
+              <p style={{ color: "#2DD4BF", fontWeight: 600, fontSize: 13, margin: "0 0 8px" }}>
+                Барои шумо кушода мешавад:
+              </p>
+              {levelCourses.map((title, i) => (
+                <p key={i} style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <CheckCircle size={14} style={{ color: "#2DD4BF", flexShrink: 0 }} />
+                  {title}
+                </p>
+              ))}
+            </div>
+          )}
+
           <button
             onClick={handleFinish}
+            disabled={saving}
             style={{
               width: "100%", background: "#14B8A6", color: "#04231F",
               border: "none", borderRadius: 6, padding: "0.8rem",
-              fontWeight: 600, fontSize: 15, cursor: "pointer",
+              fontWeight: 600, fontSize: 15, cursor: saving ? "not-allowed" : "pointer",
+              opacity: saving ? 0.7 : 1,
               transition: "opacity 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseEnter={(e) => { if (!saving) e.currentTarget.style.opacity = "0.9"; }}
+            onMouseLeave={(e) => { if (!saving) e.currentTarget.style.opacity = "1"; }}
           >
-            Омӯхтанро оғоз кун
+            {saving ? "..." : "Омӯхтанро оғоз кун"}
           </button>
         </div>
       </div>
     );
   }
+
+  const q = questions[index];
+  const progressPct = ((index + 1) / questions.length) * 100;
 
   return (
     <div style={{ minHeight: "100vh", background: BG, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -117,17 +261,10 @@ export default function PlacementTestPage() {
         <NeuralBackground />
       </div>
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 560 }}>
-        {/* Logo */}
         <div className="fade-up-1" style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(135deg, #0D9488, #22D3EE)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>Z</span>
-            </div>
-            <span style={{ color: "white", fontWeight: 600, fontSize: 16 }}>ZaboniAI</span>
-          </div>
+          <Logo />
         </div>
 
-        {/* Progress */}
         <div className="fade-up-1" style={{ marginBottom: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 8 }}>
             <span>Саволи {index + 1} аз 10</span>
@@ -142,7 +279,6 @@ export default function PlacementTestPage() {
           </div>
         </div>
 
-        {/* Card */}
         <div className="glass-card fade-up-2" style={{ padding: "2rem" }} key={index}>
           <h2 style={{ color: "white", fontWeight: 500, fontSize: 19, textAlign: "center", marginTop: 0, marginBottom: "1.75rem", lineHeight: 1.45 }}>
             {q.question}

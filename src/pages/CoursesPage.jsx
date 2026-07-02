@@ -1,132 +1,109 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Lock, Flame } from "lucide-react";
+import { BookOpen, Flame, Gem, Sparkles, CheckCircle, Lock } from "lucide-react";
 import Navbar from "../components/Navbar";
+import NeuralBackground from "../components/NeuralBackground";
 import api from "../api/axios";
-import { useTranslation } from "../i18n/useTranslation";
 import { usePageTitle } from "../hooks/usePageTitle";
 
-const levelStyles = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  elementary: "bg-blue-100 text-blue-700",
-  intermediate: "bg-amber-100 text-amber-700",
-  advanced: "bg-rose-100 text-rose-700",
-};
+const LEVELS = [
+  { key: "beginner", order: 1, label: "Ибтидоӣ" },
+  { key: "elementary", order: 2, label: "Миёна" },
+  { key: "intermediate", order: 3, label: "Болотар" },
+  { key: "advanced", order: 4, label: "Баланд" },
+];
 
-function ChevronIcon({ open }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={`transition-transform duration-200 ${open ? "rotate-90" : ""}`}
-    >
-      <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+const FILTERS = [{ key: "all", label: "Ҳама" }, ...LEVELS.map((l) => ({ key: l.key, label: l.label }))];
 
-function LessonStatusBadge({ status }) {
-  if (status === "completed") {
+function LevelBadge({ level }) {
+  const info = LEVELS.find((l) => l.key === level);
+  const base = { borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 600, display: "inline-block" };
+  if (level === "beginner") {
     return (
-      <span className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0" style={{ background: '#10b981' }}>
-        <CheckCircle2 size={14} color="white" />
+      <span style={{ ...base, background: "rgba(20,184,166,0.15)", color: "#2DD4BF", border: "1px solid rgba(20,184,166,0.3)" }}>
+        Ибтидоӣ
       </span>
     );
   }
-  if (status === "locked") {
+  if (level === "elementary") {
     return (
-      <span className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0" style={{ background: 'rgba(109,79,240,0.1)' }}>
-        <Lock size={13} style={{ color: '#8A82AD' }} />
+      <span style={{ ...base, background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
+        Миёна
       </span>
     );
   }
   return (
-    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#6D4FF0' }} />
+    <span style={{ ...base, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.18)" }}>
+      {info?.label || level}
+    </span>
   );
 }
 
-function LessonRow({ courseId, moduleId, lesson, status }) {
-  const navigate = useNavigate();
-  const isLocked = status === "locked";
-
-  const cardStyles = {
-    completed: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
-    current: "bg-primary/5 border-primary/20 text-ink hover:bg-primary/10",
-    locked: "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed",
-  };
+function LevelTrack({ courses, userLevelOrder, userLevelKey }) {
+  const coursesInCurrentLevel = courses.filter((c) => c.level === userLevelKey);
+  const totalLessons = coursesInCurrentLevel.reduce((sum, c) => sum + (c.total_lessons || 0), 0);
+  const completedLessons = coursesInCurrentLevel.reduce((sum, c) => sum + (c.completed_lessons || 0), 0);
+  const pct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const currentInfo = LEVELS.find((l) => l.order === userLevelOrder);
+  const nextInfo = LEVELS.find((l) => l.order === userLevelOrder + 1);
 
   return (
-    <button
-      disabled={isLocked}
-      onClick={() => {
-        if (isLocked) return;
-        navigate(`/lessons/${lesson.id}`, {
-          state: { courseId, moduleId },
-        });
-      }}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 ${
-        cardStyles[status]
-      } ${!isLocked ? "hover:translate-x-1" : ""}`}
-    >
-      <LessonStatusBadge status={status} />
-      <span className="flex-1 text-left">{lesson.title}</span>
-      {status === "current" && <span className="text-xs font-semibold" style={{ color: '#6D4FF0' }}>Continue →</span>}
-    </button>
-  );
-}
-
-function ModuleRow({ courseId, mod, lessons, statusMap }) {
-  const [open, setOpen] = useState(false);
-
-  const total = lessons.length;
-  const completedCount = lessons.filter((l) => statusMap[l.id] === "completed").length;
-  const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(109,79,240,0.12)' }}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 transition-colors duration-150"
-        style={{ background: 'rgba(109,79,240,0.04)' }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(109,79,240,0.08)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(109,79,240,0.04)'}
-      >
-        <div className="flex-1 text-left">
-          <span className="text-sm font-semibold block" style={{ color: '#1A1532' }}>{mod.title}</span>
-          {total > 0 && (
-            <div className="mt-1.5 flex items-center gap-2">
-              <div className="h-1.5 flex-1 max-w-[140px] rounded-full overflow-hidden" style={{ background: 'rgba(109,79,240,0.12)' }}>
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${progressPct}%`, background: '#6D4FF0' }}
-                />
+    <div className="glass-card p-5 mb-8">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+        {LEVELS.map((lvl, i) => {
+          const status = lvl.order < userLevelOrder ? "completed" : lvl.order === userLevelOrder ? "current" : "locked";
+          return (
+            <div key={lvl.key} className="flex items-center" style={{ flex: i < LEVELS.length - 1 ? 1 : "0 0 auto" }}>
+              <div className="flex flex-col items-center gap-1.5" style={{ minWidth: 66 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: status === "current" ? "rgba(20,184,166,0.15)" : status === "completed" ? "rgba(20,184,166,0.1)" : "rgba(255,255,255,0.04)",
+                  border: status === "current" ? "2px solid #14B8A6" : status === "completed" ? "1.5px solid rgba(20,184,166,0.5)" : "1.5px solid rgba(255,255,255,0.15)",
+                  boxShadow: status === "current" ? "0 0 16px rgba(20,184,166,0.45)" : "none",
+                  transition: "all 0.3s",
+                }}>
+                  {status === "completed" ? (
+                    <CheckCircle size={18} style={{ color: "#2DD4BF" }} />
+                  ) : status === "locked" ? (
+                    <Lock size={15} style={{ color: "rgba(255,255,255,0.35)" }} />
+                  ) : (
+                    <span style={{ color: "#2DD4BF", fontWeight: 700, fontSize: 14 }}>{lvl.order}</span>
+                  )}
+                </div>
+                <span style={{
+                  fontSize: 12, fontWeight: 600, textAlign: "center",
+                  color: status === "current" ? "#2DD4BF" : status === "completed" ? "rgba(45,212,191,0.75)" : "rgba(255,255,255,0.35)",
+                }}>
+                  {lvl.label}
+                </span>
               </div>
-              <span className="text-xs" style={{ color: '#8A82AD' }}>
-                {completedCount}/{total} lessons completed
-              </span>
+              {i < LEVELS.length - 1 && (
+                <div style={{
+                  flex: 1, height: 2, margin: "0 4px 20px",
+                  background: lvl.order < userLevelOrder ? "rgba(20,184,166,0.5)" : "rgba(255,255,255,0.1)",
+                }} />
+              )}
             </div>
+          );
+        })}
+      </div>
+
+      {currentInfo && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {currentInfo.label}: {completedLessons} аз {totalLessons} дарс гузашт — {pct}%
+            </span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "#14B8A6" }} />
+          </div>
+          {nextInfo && (
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Барои сатҳи {nextInfo.label} кушодан: ҳамаи дарсҳои {currentInfo.label.toLowerCase()}ро гузар (80%+)
+            </p>
           )}
-        </div>
-        <span style={{ color: '#8A82AD' }}><ChevronIcon open={open} /></span>
-      </button>
-      {open && (
-        <div className="px-4 py-3 animate-fade-in space-y-1.5" style={{ background: 'rgba(244,241,255,0.5)' }}>
-          {lessons.length === 0 && (
-            <p className="text-xs py-2" style={{ color: '#8A82AD' }}>No lessons yet / Уроков пока нет</p>
-          )}
-          {lessons.map((lesson) => (
-            <LessonRow
-              key={lesson.id}
-              courseId={courseId}
-              moduleId={mod.id}
-              lesson={lesson}
-              status={statusMap[lesson.id] || "locked"}
-            />
-          ))}
         </div>
       )}
     </div>
@@ -134,159 +111,212 @@ function ModuleRow({ courseId, mod, lessons, statusMap }) {
 }
 
 export default function CoursesPage() {
-  usePageTitle("Courses");
-  const { t } = useTranslation();
+  usePageTitle("Курсҳо");
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCourse, setActiveCourse] = useState(null);
-  const [modules, setModules] = useState([]);
-  const [lessonsByModule, setLessonsByModule] = useState({});
-  const [completedIds, setCompletedIds] = useState(new Set());
-  const [modulesLoading, setModulesLoading] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [navTargets, setNavTargets] = useState({});
+  const [activeFilter, setActiveFilter] = useState("all");
 
   useEffect(() => {
-    api.get("/auth/me").then((res) => setUser(res.data)).catch(() => {});
-    api
-      .get("/courses/")
-      .then((res) => setCourses(res.data))
-      .finally(() => setLoading(false));
-    api
-      .get("/progress/lessons")
-      .then((res) =>
-        setCompletedIds(
-          new Set(res.data.filter((p) => p.completed).map((p) => p.lesson_id))
-        )
-      )
-      .catch(() => {});
+    Promise.all([
+      api.get("/auth/me").catch(() => null),
+      api.get("/courses/"),
+      api.get("/progress/lessons").catch(() => ({ data: [] })),
+      api.get("/progress/summary").catch(() => null),
+    ]).then(([userRes, coursesRes, progressRes, summaryRes]) => {
+      setUser(userRes?.data ?? null);
+      const courseList = coursesRes.data;
+      setCourses(courseList);
+      const completed = new Set(progressRes.data.filter((p) => p.completed).map((p) => p.lesson_id));
+      setSummary(summaryRes?.data ?? null);
+      setLoading(false);
+      loadNavTargets(courseList, completed);
+    });
   }, []);
 
-  async function openCourse(course) {
-    if (activeCourse?.id === course.id) {
-      setActiveCourse(null);
-      return;
-    }
-    setActiveCourse(course);
-    setModulesLoading(true);
-    try {
-      const res = await api.get(`/courses/${course.id}/modules`);
-      const sortedModules = [...res.data].sort((a, b) => a.order - b.order);
-      setModules(sortedModules);
-
-      const lessonResults = await Promise.all(
-        sortedModules.map((mod) =>
-          api
-            .get(`/courses/${course.id}/modules/${mod.id}/lessons`)
-            .then((r) => [mod.id, [...r.data].sort((a, b) => a.order - b.order)])
-            .catch(() => [mod.id, []])
-        )
-      );
-      setLessonsByModule(Object.fromEntries(lessonResults));
-    } catch {
-      setModules([]);
-      setLessonsByModule({});
-    } finally {
-      setModulesLoading(false);
+  async function loadNavTargets(courseList, completed) {
+    for (const course of courseList) {
+      if (course.is_locked) continue;
+      try {
+        const modRes = await api.get(`/courses/${course.id}/modules`);
+        const mods = [...modRes.data].sort((a, b) => a.order - b.order);
+        const lessonResults = await Promise.all(
+          mods.map((mod) =>
+            api
+              .get(`/courses/${course.id}/modules/${mod.id}/lessons`)
+              .then((r) => ({ modId: mod.id, lessons: [...r.data].sort((a, b) => a.order - b.order) }))
+              .catch(() => ({ modId: mod.id, lessons: [] }))
+          )
+        );
+        let firstLesson = null;
+        let firstIncomplete = null;
+        for (const { modId, lessons } of lessonResults) {
+          for (const lesson of lessons) {
+            if (!firstLesson) firstLesson = { id: lesson.id, courseId: course.id, moduleId: modId };
+            if (!firstIncomplete && !completed.has(lesson.id)) {
+              firstIncomplete = { id: lesson.id, courseId: course.id, moduleId: modId };
+            }
+          }
+        }
+        setNavTargets((prev) => ({ ...prev, [course.id]: firstIncomplete || firstLesson }));
+      } catch { /* ignore */ }
     }
   }
 
-  const statusMap = {};
-  const flatLessons = modules.flatMap((mod) => lessonsByModule[mod.id] || []);
-  flatLessons.forEach((lesson, idx) => {
-    if (completedIds.has(lesson.id)) {
-      statusMap[lesson.id] = "completed";
-      return;
+  function handleCourseAction(course) {
+    if (course.is_locked) return;
+    const target = navTargets[course.id];
+    if (target) {
+      navigate(`/lessons/${target.id}`, { state: { courseId: target.courseId, moduleId: target.moduleId } });
     }
-    const prevLesson = flatLessons[idx - 1];
-    const isLocked = idx > 0 && !completedIds.has(prevLesson.id);
-    statusMap[lesson.id] = isLocked ? "locked" : "current";
-  });
+  }
+
+  const filteredCourses = courses.filter((c) => activeFilter === "all" || c.level === activeFilter);
+
+  const overallTotal = summary?.total_lessons ?? 0;
+  const overallCompleted = summary?.completed_lessons ?? 0;
+  const overallPercent = overallTotal > 0 ? Math.round((overallCompleted / overallTotal) * 100) : 0;
+
+  const userLevelKey = courses[0]?.user_level || "beginner";
+  const userLevelOrder = courses[0]?.user_level_order || 1;
 
   return (
-    <div className="min-h-screen page-enter" style={{ background: '#F4F1FF' }}>
+    <div className="min-h-screen page-enter" style={{ background: "linear-gradient(160deg, #061A1C 0%, #0A2A2E 45%, #0E3A3F 100%)" }}>
       <Navbar />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <div className="mb-10 animate-fade-in">
-          <h1 className="text-3xl font-extrabold" style={{ color: '#1A1532' }}>
-            Welcome back{user ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
-          </h1>
-          <p className="mt-1" style={{ color: '#8A82AD' }}>
-            С возвращением! Keep your streak going{" "}
-            {user && (
-              <span className="inline-flex items-center gap-1 font-semibold" style={{ color: '#6D4FF0' }}>
-                <Flame size={14} style={{ color: '#FF5C8A' }} /> {user.streak} {user.streak === 1 ? "day" : "days"}
-              </span>
-            )}
-          </p>
+      <div className="relative" style={{ minHeight: "calc(100vh - 64px)" }}>
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", opacity: 0.3, pointerEvents: "none" }}>
+          <NeuralBackground />
         </div>
 
-        <h2 className="text-lg font-bold mb-4" style={{ color: '#534A7A' }}>{t("your_courses")}</h2>
-
-        {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 rounded-2xl animate-pulse" style={{ background: 'rgba(109,79,240,0.08)' }} />
-            ))}
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-10">
+          {/* Welcome */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-medium mb-4" style={{ color: "white", fontFamily: "Inter, sans-serif" }}>
+              Хуш омадед{user ? `, ${user.full_name.split(" ")[0]}` : ""}!
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="glass-card flex items-center gap-1.5 px-3 py-1.5 text-sm" style={{ borderRadius: 20 }}>
+                <Flame size={14} style={{ color: "#FBBF24" }} />
+                <span style={{ color: "#FBBF24", fontWeight: 500 }}>{user?.streak ?? 0} рӯз</span>
+              </span>
+              <span className="glass-card flex items-center gap-1.5 px-3 py-1.5 text-sm" style={{ borderRadius: 20 }}>
+                <Gem size={14} style={{ color: "#2DD4BF" }} />
+                <span style={{ color: "#2DD4BF", fontWeight: 500 }}>{user?.coins ?? 0} танга</span>
+              </span>
+              <span className="glass-card flex items-center gap-1.5 px-3 py-1.5 text-sm" style={{ borderRadius: 20 }}>
+                <Sparkles size={14} style={{ color: "rgba(255,255,255,0.8)" }} />
+                <span style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{user?.xp_points ?? 0} XP</span>
+              </span>
+            </div>
           </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {courses.map((course) => (
-              <div key={course.id} className="flex flex-col gap-3">
-                <button
-                  onClick={() => openCourse(course)}
-                  className={`text-left glass-card-light p-6 transition-all duration-200 border-2 ${
-                    activeCourse?.id === course.id ? "!border-primary/40" : ""
-                  }`}
-                  style={activeCourse?.id === course.id ? { borderColor: 'rgba(109,79,240,0.4)' } : {}}
-                >
-                  <span
-                    className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${
-                      levelStyles[course.level] || "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {t("level")}: {t(course.level)}
-                  </span>
-                  <h3 className="text-lg font-bold mb-1.5" style={{ color: '#1A1532' }}>{course.title}</h3>
-                  <p className="text-sm line-clamp-2" style={{ color: '#8A82AD' }}>{course.description}</p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold" style={{ color: '#6D4FF0' }}>
-                    {activeCourse?.id === course.id ? "Hide modules" : "View modules"}
-                    <ChevronIcon open={activeCourse?.id === course.id} />
-                  </div>
-                </button>
 
-                {activeCourse?.id === course.id && (
-                  <div className="glass-card-light p-4 space-y-2 animate-slide-up">
-                    {modulesLoading && (
-                      <p className="text-xs px-2 py-1" style={{ color: '#8A82AD' }}>Loading...</p>
-                    )}
-                    {!modulesLoading && modules.length === 0 && (
-                      <p className="text-xs px-2 py-1" style={{ color: '#8A82AD' }}>
-                        No modules yet / Пока нет модулей
-                      </p>
-                    )}
-                    {!modulesLoading &&
-                      modules.map((mod) => (
-                        <ModuleRow
-                          key={mod.id}
-                          courseId={course.id}
-                          mod={mod}
-                          lessons={lessonsByModule[mod.id] || []}
-                          statusMap={statusMap}
-                        />
-                      ))}
-                  </div>
-                )}
+          {/* Level progression */}
+          {!loading && <LevelTrack courses={courses} userLevelOrder={userLevelOrder} userLevelKey={userLevelKey} />}
+
+          {/* Progress overview */}
+          {!loading && (
+            <div className="glass-card p-5 mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-medium" style={{ color: "white" }}>Пешрафти умумӣ</h2>
+                <span className="text-sm font-medium" style={{ color: "#2DD4BF" }}>{overallPercent}%</span>
               </div>
+              <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${overallPercent}%`, background: "#14B8A6" }} />
+              </div>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                {overallCompleted} аз {overallTotal} дарс гузашт
+              </p>
+            </div>
+          )}
+
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 mb-6 flex-wrap">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className="px-4 py-1.5 text-sm font-medium transition-all duration-150"
+                style={
+                  activeFilter === f.key
+                    ? { color: "white", borderBottom: "2px solid #14B8A6", paddingBottom: 4 }
+                    : { color: "rgba(255,255,255,0.4)", borderBottom: "2px solid transparent", paddingBottom: 4 }
+                }
+              >
+                {f.label}
+              </button>
             ))}
           </div>
-        )}
 
-        {!loading && courses.length === 0 && (
-          <div className="text-center py-20" style={{ color: '#8A82AD' }}>
-            No courses available yet / Пока нет курсов
-          </div>
-        )}
+          {/* Course cards */}
+          {loading ? (
+            <div className="grid sm:grid-cols-2 gap-5">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-52 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+              ))}
+            </div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="glass-card p-12 text-center">
+              <BookOpen size={48} style={{ color: "#14B8A6", margin: "0 auto 16px" }} />
+              <p style={{ color: "rgba(255,255,255,0.6)" }}>Курсҳо ҳанӯз нест. Зуд илова мешавад!</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-5">
+              {filteredCourses.map((course) => {
+                const pct = course.completion_percentage ?? 0;
+                const total = course.total_lessons ?? 0;
+                const done = course.completed_lessons ?? 0;
+                const hasAny = done > 0;
+                const requiredLevel = LEVELS.find((l) => l.order === course.level_order - 1);
+
+                return (
+                  <div key={course.id} className="glass-card p-5 flex flex-col gap-3 relative" style={{ borderRadius: 6, overflow: "hidden" }}>
+                    <div>
+                      <LevelBadge level={course.level} />
+                    </div>
+                    <h3 className="text-base font-medium" style={{ color: "white" }}>{course.title}</h3>
+                    <p className="text-sm line-clamp-2" style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+                      {course.description}
+                    </p>
+                    <div>
+                      <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(255,255,255,0.08)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: "#14B8A6" }}
+                        />
+                      </div>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        {done} аз {total} дарс
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleCourseAction(course)}
+                      disabled={course.is_locked || total === 0}
+                      className="mt-auto w-full py-2.5 font-medium text-sm transition-all duration-200 hover:opacity-90 disabled:opacity-40"
+                      style={{ background: "#14B8A6", color: "#04231F", borderRadius: 6, border: "none", cursor: course.is_locked || total === 0 ? "not-allowed" : "pointer" }}
+                    >
+                      {hasAny ? "Идома деҳ" : "Оғоз кун"}
+                    </button>
+
+                    {course.is_locked && (
+                      <div
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4"
+                        style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(1px)" }}
+                      >
+                        <Lock size={26} style={{ color: "white" }} />
+                        <p style={{ color: "white", fontSize: 13, fontWeight: 500, margin: 0 }}>
+                          🔒 Барои кушодан сатҳи {requiredLevel?.label || ""}-ро тамом кун
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
